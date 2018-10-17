@@ -11,8 +11,21 @@ export const logger = createLogger({
             delete info.level;
             delete info.message;
 
+            const { error } = info;
+
+            if (error instanceof Error) {
+                // if it's not an Error, we want to stringify it next
+                delete info.error;
+            }
+
             if (Object.keys(info).length) {
                 msg += " " + JSON.stringify(info);
+            }
+
+            // error stack traces come last
+            if (error instanceof Error) {
+                // msg += `\n${JSON.stringify((error as any).config)}`;
+                msg += `\n${error.stack}`;
             }
 
             return msg;
