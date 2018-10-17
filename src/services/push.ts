@@ -91,7 +91,7 @@ export async function register(body: IWatchParams<any>) {
  * Webhook receiver for web-push
  */
 export async function send(channel: string, userId: string, body: any) {
-    logger.info("SEND", {channel, userId, body});
+    logger.info("SEND", {channel, userId});
 
     requireInput(channel, "channel");
     requireInput(userId, "userId");
@@ -105,7 +105,7 @@ export async function send(channel: string, userId: string, body: any) {
         throw new InputError("No such channel");
     }
 
-    const payload = JSON.stringify(body);
+    const payload = JSON.stringify(ch.context);
 
     const options = {
         TTL: 10 * 60, // in seconds
