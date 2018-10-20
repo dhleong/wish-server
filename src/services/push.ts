@@ -1,3 +1,4 @@
+import { RedisBus } from "darkside-sse";
 import uuid from "uuid/v4";
 import * as webPush from "web-push";
 
@@ -12,6 +13,10 @@ export { IChannelInfo, IWatchParams } from "./push/core";
 const services: {[kind: string]: IPushService<any>} = {
     gdrive: GapiPushService,
 };
+
+export const bus = new RedisBus(
+    redis.client.redis,
+);
 
 /**
  * Initialize the service
@@ -95,6 +100,9 @@ export async function send(channel: string, userId: string, body: any) {
 
     requireInput(channel, "channel");
     requireInput(userId, "userId");
+
+    // TODO can we (should we?) get the file id watched?
+    bus.send(channel, JSON.stringify({ channel }));
 
     const ch = await getChannel(channel);
     if (!ch || !ch.subscription) {

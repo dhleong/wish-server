@@ -69,6 +69,6 @@ async function run() {
 
 // start the server
 run().catch(e => {
-    logger.warn("Unhandled exception:", {error: e});
+    logger.warn("Unhandled exception on:", {error: e});
     process.exit(1);
 });
