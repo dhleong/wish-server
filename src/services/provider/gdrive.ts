@@ -1,37 +1,37 @@
 /*
- * GAPI implementation of Push service
+ * Google Drive implementation of IProvider
  */
 
+import { OAuth2Client } from "google-auth-library";
 import { drive_v3, google } from "googleapis";
 
+import { requireKey } from "../../errors";
 import * as redis from "../redis";
-import { IPushService, IWatchParams } from "./core";
+import { IProvider, IWatchParams } from "./core";
 
 const DEFAULT_PUSH_URL = "https://wish-server.now.sh/v1/push/send";
 
-export interface IGapiOauth {
+const OAUTH_CLIENT_ID: string = requireKey(process.env, "GAPI_OAUTH_ID");
+
+export interface IGdriveOauth {
     access_token: string;
     token_type: string;
+    id_token: string;
 }
 
-function auth(token: IGapiOauth) {
-    const oauth = new google.auth.OAuth2();
-    oauth.setCredentials(token);
-    return oauth;
+function oauth(token: IGdriveOauth) {
+    const inst = new google.auth.OAuth2();
+    inst.setCredentials(token);
+    return inst;
 }
 
-function channelToken(config: IWatchParams<IGapiOauth>) {
-    // NOTE the library may convert this to a number if
-    // we pass the user id directly. Sigh.
-    return JSON.stringify({userId: config.userId});
-}
-
-class GapiPushServiceImpl implements IPushService<IGapiOauth> {
+class GdriveProviderImpl implements IProvider<IGdriveOauth> {
 
     private api = new drive_v3.Drive({});
+    private oauthClient = new OAuth2Client(OAUTH_CLIENT_ID);
 
     public async watch(
-        config: IWatchParams<IGapiOauth>,
+        config: IWatchParams<IGdriveOauth>,
         channelId: string,
         isNewChannel: boolean,
     ) {
@@ -45,13 +45,13 @@ class GapiPushServiceImpl implements IPushService<IGapiOauth> {
         const watchDurationMillis = 4 * 60 * 60000;
 
         const result = await this.api.files.watch({
-            auth: auth(config.auth),
-            fileId: config.context.id,
+            auth: oauth(config.auth),
+            fileId: config.fileId,
             requestBody: {
                 address: process.env.GAPI_PUSH_URL || DEFAULT_PUSH_URL,
                 expiration: "" + (Date.now() + watchDurationMillis),
                 id: channelId,
-                token: channelToken(config),
+                token: config.token,
                 type: "web_hook",
             },
         });
@@ -65,7 +65,7 @@ class GapiPushServiceImpl implements IPushService<IGapiOauth> {
     }
 
     public async unwatch(
-        config: IWatchParams<IGapiOauth>,
+        config: IWatchParams<IGdriveOauth>,
         channelId: string,
     ) {
         // load resource ID from redis (it's frustrating that
@@ -81,13 +81,22 @@ class GapiPushServiceImpl implements IPushService<IGapiOauth> {
         }
 
         await this.api.channels.stop({
-            auth: auth(config.auth),
+            auth: oauth(config.auth),
             requestBody: {
                 id: channelId,
                 resourceId: resourceId as string,
             },
         });
     }
+
+    public async validate(auth: IGdriveOauth) {
+        const idToken: string = requireKey(auth, "id_token");
+        const accessToken = requireKey(auth, "access_token");
+        await this.oauthClient.verifyIdToken({
+            audience: OAUTH_CLIENT_ID,
+            idToken,
+        });
+    }
 }
 
-export const GapiPushService = new GapiPushServiceImpl();
+export const GdriveProvider = new GdriveProviderImpl();

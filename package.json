@@ -8,6 +8,7 @@
     "env": {
       "CORS_HOST": "https://dhleong.github.io",
       "GAPI_PUSH_URL": "https://wish-server.now.sh/v1/push/send",
+      "GAPI_OAUTH_ID": "@wish-gapi-oauth-id",
       "VAPID_PUBLIC_KEY": "@wish-vapid-public-key",
       "VAPID_PRIVATE_KEY": "@wish-vapid-private-key",
       "REDIS_ENDPOINT": "@wish-redis-endpoint",
@@ -32,6 +33,7 @@
   "dependencies": {
     "@koa/cors": "^2.2.2",
     "darkside-sse": "^1.0.2",
+    "google-auth-library": "^2.0.0",
     "googleapis": "^34.0.0",
     "handy-redis": "^1.5.1",
     "koa": "^2.5.3",

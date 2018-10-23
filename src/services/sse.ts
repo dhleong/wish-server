@@ -1,7 +1,7 @@
 import { RedisBus } from "darkside-sse";
 import { IDarksideBus } from "darkside-sse";
-import { RedisClient } from "darkside-sse/node_modules/@types/redis";
 import { ServerSideEvents } from "lightside";
+import { RedisClient } from "redis";
 
 import * as redis from "./redis";
 

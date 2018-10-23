@@ -1,14 +1,21 @@
+import { knownProviders, providers } from "./provider";
 
 export interface IAuth {
-    grive?: any;
+    gdrive?: any;
 }
 
 export interface IAuthService {
-    validate(auth: any): IAuth | never;
+    validate(auth: any): Promise<IAuth> | never;
 }
 
 export class AuthService implements IAuthService {
-    public validate(auth: any): IAuth | never {
+    public async validate(auth: any): Promise<IAuth> | never {
+        for (const provider of knownProviders) {
+            const thisAuth = auth[provider];
+            if (!thisAuth) continue;
+
+            await providers[provider].validate(auth);
+        }
         return auth as IAuth;
     }
 }

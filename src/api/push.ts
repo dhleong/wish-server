@@ -4,10 +4,6 @@ import { InputError, requireInput, requireKey } from "../errors";
 import { logger } from "../log";
 import * as push from "../services/push";
 
-export async function getVapidPublicKey(ctx: Koa.Context) {
-    ctx.body = { key: push.getVapidPublicKey() };
-}
-
 export async function deleteChannel(ctx: Koa.Context) {
     const channelId: string = requireKey(ctx.params, "channelId");
     const auth = requireKey(ctx.request.body as {auth: any}, "auth");
@@ -27,8 +23,9 @@ export async function register(ctx: Koa.Context) {
     requireKey(params, "context");
     requireKey(params, "userId");
 
-    // the client could potentially cancel the channel early
-    ctx.body = await push.register(params);
+    // // the client could potentially cancel the channel early
+    // ctx.body = await push.register(params);
+    // TODO
 }
 
 export async function send(ctx: Koa.Context) {
