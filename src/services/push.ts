@@ -1,22 +1,18 @@
-import { RedisBus } from "darkside-sse";
 import uuid from "uuid/v4";
 import * as webPush from "web-push";
 
 import { InputError, requireInput, requireKey } from "../errors";
 import { logger } from "../log";
+import services from "../services";
 import { IChannelContext, IChannelInfo, IPushService, IWatchParams } from "./push/core";
 import { GapiPushService } from "./push/gapi";
 import * as redis from "./redis";
 
 export { IChannelInfo, IWatchParams } from "./push/core";
 
-const services: {[kind: string]: IPushService<any>} = {
+const pushServices: {[kind: string]: IPushService<any>} = {
     gdrive: GapiPushService,
 };
-
-export const bus = new RedisBus(
-    redis.client.redis,
-);
 
 /**
  * Initialize the service
@@ -50,7 +46,7 @@ export async function deleteChannel(
     const ch = await getChannel(channelId);
     if (!ch) return; // nothing to do
 
-    const service = services[ch.context.kind];
+    const service = pushServices[ch.context.kind];
     if (!service) {
         throw new InputError(`Unknown service: ${ch.context.kind}`);
     }
@@ -73,7 +69,7 @@ export async function deleteChannel(
  * Register a web-push receiver
  */
 export async function register(body: IWatchParams<any>) {
-    const service = services[body.context.kind];
+    const service = pushServices[body.context.kind];
     if (!service) {
         throw new InputError(`Unknown service: ${body.context.kind}`);
     }
@@ -102,7 +98,7 @@ export async function send(channel: string, userId: string, body: any) {
     requireInput(userId, "userId");
 
     // TODO can we (should we?) get the file id watched?
-    bus.send(channel, JSON.stringify({ channel }));
+    services.sse.sendChanged(channel, channel); // FIXME ?
 
     const ch = await getChannel(channel);
     if (!ch || !ch.subscription) {

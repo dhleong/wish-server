@@ -16,11 +16,12 @@
   },
   "scripts": {
     "build": "tsc -p .",
+    "check": "npm run lint && npm test",
     "dev": "ts-node-dev src/index.ts",
     "deploy": "now --public && now alias",
     "lint": "tslint -p .",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
   },
   "author": "Daniel Leong",
   "license": "MIT",
@@ -30,7 +31,6 @@
   },
   "dependencies": {
     "@koa/cors": "^2.2.2",
-    "@types/uuid": "^3.4.4",
     "darkside-sse": "^1.0.1",
     "googleapis": "^34.0.0",
     "handy-redis": "^1.5.1",
@@ -46,13 +46,16 @@
     "winston": "^3.1.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.6",
     "@types/koa": "^2.0.46",
     "@types/koa-bodyparser": "^5.0.1",
     "@types/koa-router": "^7.0.32",
     "@types/koa-static": "^4.0.0",
     "@types/koa__cors": "^2.2.3",
+    "@types/mocha": "^5.2.5",
     "@types/node": "^10.11.7",
     "@types/redis": "^2.8.7",
+    "@types/uuid": "^3.4.4",
     "@types/web-push": "^3.3.0",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",

@@ -4,7 +4,7 @@ import { darkside } from "darkside-sse";
 import { lightside } from "lightside";
 
 import * as push from "./api/push";
-import { bus } from "./services/push";
+import services from "./services";
 
 export function createRoutes() {
     const routes = new Router();
@@ -17,7 +17,7 @@ export function createRoutes() {
     routes.get("/push/c/:channelId",
         lightside(),
         darkside({
-            bus,
+            bus: services.sse.bus,
             extractChannelIds: ctx => ctx.params.channelId,
         }),
     );
