@@ -44,7 +44,7 @@ export async function create(
     return sessionId;
 }
 
-const promoteNewWatchers = new redis.Script(`
+const promoteNewWatchers = new redis.Script<[number, string]>(`
     local idsCount = ARGV[1]
     local sessionId = ARGV[2]
     local watcherIds = { unpack(KEYS, 1, idsCount) }
@@ -93,7 +93,7 @@ export async function destroy(
             interestedIds.map(id => `watchers:${id}`),
         ),
         [
-            interestedIds.length.toString(),
+            interestedIds.length,
             sessionId,
         ],
     );

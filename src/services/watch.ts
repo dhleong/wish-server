@@ -37,7 +37,7 @@ export async function create(
     ));
 }
 
-const setexIfNull = new redis.Script(`
+const setexIfNull = new redis.Script<[number, string]>(`
     local value = redis.call("GET", KEYS[1])
     if not value
     then
@@ -60,7 +60,7 @@ async function _createOne(
 
     // atomically set watcher:ID <- sessionId IFF watcher:ID is NIL
     const actualWatcher = await setexIfNull.eval([`watcher:${fileId}`], [
-        config.watcherExpiration.toString(), sessionId,
+        config.watcherExpiration, sessionId,
     ]);
     if (actualWatcher !== sessionId) {
         // TODO we did not change watcher:ID; STOP the watch

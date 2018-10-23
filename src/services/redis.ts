@@ -44,7 +44,7 @@ export async function multi(block: (m: redis.Multi) => any) {
 /**
  * Convenient abstraction over LUA scripts that prefers EXECSHA
  */
-export class Script {
+export class Script<Args extends any[] = string[]> {
     private sha: string;
 
     constructor(
@@ -59,11 +59,14 @@ export class Script {
      * Eval the script with the given `keys` and `args`. Since `keys` is a list,
      * `numkeys` is computed for you
      */
-    public async eval(keys: string[], args?: string[]): Promise<any> {
+    public async eval(keys: string[], args?: Args): Promise<any> {
+        const actualArgs = args
+            ? args.map(it => it.toString())
+            : [];
         try {
-            return await client.evalsha(this.sha, keys.length, keys, args || []);
+            return await client.evalsha(this.sha, keys.length, keys, actualArgs);
         } catch (e) {
-            return client.eval(this.lua, keys.length, keys, args || []);
+            return client.eval(this.lua, keys.length, keys, actualArgs);
         }
     }
 }
