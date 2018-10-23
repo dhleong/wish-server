@@ -1,4 +1,6 @@
 import config from "../config";
+import services from "../services";
+import { IAuth } from "./auth";
 import * as redis from "./redis";
 
 /**
@@ -8,10 +10,11 @@ import * as redis from "./redis";
  */
 export async function create(
     sessionId: string,
-    auth: any,
+    rawAuth: any,
     ids: string[],
 ) {
-    // TODO verify auth
+    // validate auth
+    const auth = services.auth.validate(rawAuth);
 
     // request the current "watcher" for each file
     const watchers = await redis.multi(m => {
@@ -45,10 +48,9 @@ const setexIfNull = new redis.Script(`
     end
 `);
 
-// NOTE: this assumes `auth` works!
 async function _createOne(
     sessionId: string,
-    auth: any,
+    auth: IAuth,
     fileId: string,
 ) {
     const token = fileId; // TODO JWT token to prevent spoofing

@@ -1,5 +1,7 @@
-import { SSEService } from "./services/sse";
+import { AuthService, IAuthService } from "./services/auth";
+import { ISSEService, SSEService } from "./services/sse";
 
 export default {
-    sse: new SSEService(),
+    auth: new AuthService() as IAuthService,
+    sse: new SSEService() as ISSEService,
 };

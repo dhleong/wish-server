@@ -8,10 +8,11 @@ import * as watch from "./watch";
 
 export async function create(
     client: ServerSideEvents,
-    auth: any,
+    rawAuth: any,
     interestedIds: string[],
 ) {
-    // TODO validate auth
+    // validate auth
+    const auth = services.auth.validate(rawAuth);
 
     // create session and listen to it
     const sessionId = uuid();
