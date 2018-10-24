@@ -15,24 +15,24 @@ export async function init() {
     // nop
 }
 
-export async function deleteChannel(
-    channelId: string,
-    auth: any,
-) {
-    // TODO
-}
-
 /**
- * Webhook receiver for web-push
+ * Webhook receiver for "changed" notifications from a Provider
  */
-export async function send(channel: string, userId: string, body: any) {
-    logger.info("SEND", {channel, userId});
+export async function send(channel: string, token: string) {
+    logger.info("SEND", {channel, token});
 
     requireInput(channel, "channel");
-    requireInput(userId, "userId");
+    requireInput(token, "token");
 
-    // TODO can we (should we?) get the file id watched?
-    services.sse.sendChanged(channel, channel); // FIXME ?
+    // unpack() verifies the validity of the token
+    // and throws an exception if it's not legit
+    const {
+        sheetId,
+    } = services.token.unpack(token);
+
+    // NOTE: anyone interested in this sheet is listening
+    // on a channel named by the sheetId
+    services.sse.sendChanged(sheetId, sheetId);
 }
 
 /**

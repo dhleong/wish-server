@@ -9,9 +9,9 @@ describe("token service", () => {
         const svc = new TokenService("not-a-secret");
         const token = svc.generate("firefly/serenity");
         const {
-            fileId,
+            sheetId,
         } = svc.unpack(token);
 
-        fileId.should.equal("firefly/serenity");
+        sheetId.should.equal("firefly/serenity");
     });
 });

@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ISSUER = "wish-server";
 
 export interface ITokenPayload {
-    fileId: string;
+    sheetId: string;
 }
 
 export async function init() {
@@ -16,7 +16,7 @@ export async function init() {
 }
 
 export interface ITokenService {
-    generate(fileId: string): string;
+    generate(sheetId: string): string;
     unpack(token: string): ITokenPayload;
 }
 
@@ -26,11 +26,11 @@ export class TokenService {
         private secret: string = JWT_SECRET as string,
     ) {}
 
-    public generate(fileId: string) {
+    public generate(sheetId: string) {
         requireInput(this.secret, "JWT_SECRET");
 
         return jwt.sign({
-            fileId,
+            sheetId,
         }, this.secret, {
             expiresIn: "6h",
             issuer: JWT_ISSUER,
