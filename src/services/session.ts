@@ -2,6 +2,8 @@
 import { ServerSideEvents } from "lightside";
 import uuid from "uuid/v4";
 
+import { InputError } from "../errors";
+import { logger } from "../log";
 import services from "../services";
 import * as redis from "./redis";
 import * as watch from "./watch";
@@ -11,6 +13,10 @@ export async function create(
     rawAuth: any,
     interestedIds: string[],
 ) {
+    if (!interestedIds.length) {
+        throw new InputError(`interestedIds must not be empty`);
+    }
+
     // validate auth
     const auth = services.auth.validate(rawAuth);
 
@@ -27,8 +33,12 @@ export async function create(
 
     // record interest so we can get pushes
     await setWatching(sessionId, interestedIds, true);
-    client.once("close", () => {
-        destroy(sessionId, interestedIds);
+    client.once("close", async () => {
+        try {
+            await destroy(sessionId, interestedIds);
+        } catch (e) {
+            logger.warn(`Error destroying session ${sessionId}`, {error: e});
+        }
     });
 
     // listen for changes on our interested sheets
@@ -82,6 +92,10 @@ export async function destroy(
     sessionId: string,
     interestedIds: string[],
 ) {
+    if (!interestedIds.length) {
+        throw new InputError(`interestedIds must not be empty`);
+    }
+
     // stop watching
     await setWatching(sessionId, interestedIds, false);
 
