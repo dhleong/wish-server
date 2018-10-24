@@ -3,6 +3,8 @@ import { IHandyRedis } from "handy-redis";
 import { IEvent, ServerSideEvents } from "lightside";
 
 import services from "../src/services";
+import { IProviderService } from "../src/services/provider";
+import { IProvider, IWatchParams } from "../src/services/provider/core";
 import * as redis from "../src/services/redis";
 import { SSEService } from "../src/services/sse";
 import { ITokenPayload, ITokenService } from "../src/services/token";
@@ -34,12 +36,35 @@ class FakeTokenService implements ITokenService {
     }
 }
 
+class FakeProvider implements IProvider<any> {
+    public async watch(config: IWatchParams<any>, channelId: string, isNewChannel: boolean): Promise<any> {
+        // nop
+    }
+    public async unwatch(config: IWatchParams<any>, channelId: string): Promise<any> {
+        // nop
+    }
+    public async validate(auth: any): Promise<any> {
+        // nop
+    }
+}
+
+class FakeProviderService implements IProviderService {
+    public byId(providerId: string): IProvider<any> {
+        return new FakeProvider();
+    }
+
+    public forSheet(sheetId: string): IProvider<any> {
+        return this.byId(sheetId);
+    }
+}
+
 export function integrate(testFn: (redis: IHandyRedis, bus: TestableBus) => Promise<any>): () => Promise<any> {
     return async () => {
         // stub out services
         const bus = new TestableBus();
         services.sse = new SSEService(bus);
 
+        services.provider = new FakeProviderService();
         services.token = new FakeTokenService();
 
         await redis.client.flushdb();

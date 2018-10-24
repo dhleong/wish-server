@@ -1,3 +1,4 @@
+import { unpackSheetId } from "../util/sheet";
 import { IProvider } from "./provider/core";
 import { GdriveProvider } from "./provider/gdrive";
 
@@ -17,4 +18,31 @@ export async function init() {
 
     const ids = Object.keys(providers);
     knownProviders.push(...ids);
+}
+
+export interface IProviderService {
+    byId(providerId: string): IProvider<any>;
+    forSheet(sheetId: string): IProvider<any>;
+}
+
+export class ProviderService implements IProviderService {
+
+    public byId(providerId: string): IProvider<any> {
+        const inst = providers[providerId];
+        if (!inst) {
+            throw new Error(`Unknown provider '${providerId}'`);
+        }
+
+        return inst;
+    }
+
+    public forSheet(sheetId: string): IProvider<any> {
+        const { provider } = unpackSheetId(sheetId);
+        const inst = providers[provider];
+        if (!inst) {
+            throw new Error(`Unknown provider '${provider}' for sheet id ${sheetId}`);
+        }
+
+        return inst;
+    }
 }

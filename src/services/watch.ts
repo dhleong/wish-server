@@ -1,5 +1,8 @@
+import uuid from "uuid";
+
 import config from "../config";
 import services from "../services";
+import { unpackSheetId } from "../util/sheet";
 import { IAuth } from "./auth";
 import * as redis from "./redis";
 
@@ -51,18 +54,29 @@ const setexIfNull = new redis.Script<[number, string]>(`
 async function _createOne(
     sessionId: string,
     auth: IAuth,
-    fileId: string,
+    sheetId: string,
 ) {
-    const token = services.token.generate(fileId);
+    const token = services.token.generate(sheetId);
+    const channel = uuid.v4();
 
-    // TODO get the right service
-    // TODO create the watch
+    // get the right provider
+    const sid = unpackSheetId(sheetId);
+    const provider = services.provider.forSheet(sheetId);
+
+    // create the watch
+    const watchConfig = {
+        auth: (auth as any)[sid.provider],
+        fileId: sid.id,
+        token,
+    };
+    await provider.watch(watchConfig, channel, true);
 
     // atomically set watcher:ID <- sessionId IFF watcher:ID is NIL
-    const actualWatcher = await setexIfNull.eval([`watcher:${fileId}`], [
+    const actualWatcher = await setexIfNull.eval([`watcher:${sheetId}`], [
         config.watcherExpiration, sessionId,
     ]);
     if (actualWatcher !== sessionId) {
-        // TODO we did not change watcher:ID; STOP the watch
+        // we did not change watcher:ID; STOP the watch
+        await provider.unwatch(watchConfig, channel);
     }
 }
