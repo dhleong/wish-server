@@ -5,6 +5,7 @@ import { IEvent, ServerSideEvents } from "lightside";
 import services from "../src/services";
 import * as redis from "../src/services/redis";
 import { SSEService } from "../src/services/sse";
+import { ITokenPayload, ITokenService } from "../src/services/token";
 
 class TestableBus extends MemoryBus {
 
@@ -21,17 +22,34 @@ class TestableBus extends MemoryBus {
     }
 }
 
+class FakeTokenService implements ITokenService {
+    public generate(fileId: string): string {
+        return fileId;
+    }
+
+    public unpack(token: string): ITokenPayload {
+        return {
+            fileId: token,
+        };
+    }
+}
+
 export function integrate(testFn: (redis: IHandyRedis, bus: TestableBus) => Promise<any>): () => Promise<any> {
     return async () => {
         // stub out services
         const bus = new TestableBus();
         services.sse = new SSEService(bus);
 
+        services.token = new FakeTokenService();
+
         await redis.client.flushdb();
 
-        await testFn(redis.client, bus);
+        try {
+            await testFn(redis.client, bus);
 
-        // let our node process finish:
-        redis.client.redis.unref();
+        } finally {
+            // let our node process finish:
+            redis.client.redis.unref();
+        }
     };
 }

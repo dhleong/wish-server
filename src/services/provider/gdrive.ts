@@ -11,8 +11,6 @@ import { IProvider, IWatchParams } from "./core";
 
 const DEFAULT_PUSH_URL = "https://wish-server.now.sh/v1/push/send";
 
-const OAUTH_CLIENT_ID: string = requireKey(process.env, "GAPI_OAUTH_ID");
-
 export interface IGdriveOauth {
     access_token: string;
     token_type: string;
@@ -25,10 +23,14 @@ function oauth(token: IGdriveOauth) {
     return inst;
 }
 
-class GdriveProviderImpl implements IProvider<IGdriveOauth> {
+export class GdriveProvider implements IProvider<IGdriveOauth> {
 
     private api = new drive_v3.Drive({});
-    private oauthClient = new OAuth2Client(OAUTH_CLIENT_ID);
+
+    private oauthClientId: string = requireKey(process.env, "GAPI_OAUTH_ID");
+    private oauthClient = new OAuth2Client(
+        this.oauthClientId,
+    );
 
     public async watch(
         config: IWatchParams<IGdriveOauth>,
@@ -93,10 +95,8 @@ class GdriveProviderImpl implements IProvider<IGdriveOauth> {
         const idToken: string = requireKey(auth, "id_token");
         const accessToken = requireKey(auth, "access_token");
         await this.oauthClient.verifyIdToken({
-            audience: OAUTH_CLIENT_ID,
+            audience: this.oauthClientId,
             idToken,
         });
     }
 }
-
-export const GdriveProvider = new GdriveProviderImpl();

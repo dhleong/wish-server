@@ -10,6 +10,7 @@ import { logger } from "./log";
 import { createRoutes } from "./routes";
 import { init as initPush } from "./services/push";
 import { init as initRedis } from "./services/redis";
+import { init as initToken } from "./services/token";
 
 const {
     CORS_HOST,
@@ -59,6 +60,7 @@ function initServer() {
 async function initServices() {
     await initPush();
     await initRedis();
+    await initToken();
 }
 
 async function run() {

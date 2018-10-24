@@ -14,7 +14,7 @@ export async function create(
     ids: string[],
 ) {
     // validate auth
-    const auth = services.auth.validate(rawAuth);
+    const auth = await services.auth.validate(rawAuth);
 
     // request the current "watcher" for each file
     const watchers = await redis.multi(m => {
@@ -53,7 +53,7 @@ async function _createOne(
     auth: IAuth,
     fileId: string,
 ) {
-    const token = fileId; // TODO JWT token to prevent spoofing
+    const token = services.token.generate(fileId);
 
     // TODO get the right service
     // TODO create the watch

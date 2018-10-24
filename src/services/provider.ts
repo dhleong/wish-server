@@ -8,7 +8,13 @@ import { GdriveProvider } from "./provider/gdrive";
  */
 
 export const providers: {[kind: string]: IProvider<any>} = {
-    gdrive: GdriveProvider,
 };
 
-export const knownProviders = Object.keys(providers);
+export const knownProviders: string[] = [];
+
+export async function init() {
+    providers.gdrive = new GdriveProvider();
+
+    const ids = Object.keys(providers);
+    knownProviders.push(...ids);
+}
