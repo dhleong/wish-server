@@ -84,9 +84,15 @@ const promoteNewWatchers = new redis.Script<[number, string]>(`
         -- if we were watching this sheet
         if currentWatcher == sessionId
         then
-            -- promote a random watcher
-            table.insert(promoted, watcherIds[i])
-            table.insert(promoted, redis.call("SRANDMEMBER", watchersIds[i]))
+            -- attempt to promote a random watcher
+            local newWatcher = redis.call("SRANDMEMBER", watchersIds[i])
+            if newWatcher
+            then
+                -- if newWatcher was nil, then there's nobody
+                -- else interested
+                table.insert(promoted, watcherIds[i])
+                table.insert(promoted, newWatcher)
+            end
         end
     end
 

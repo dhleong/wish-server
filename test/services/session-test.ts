@@ -45,4 +45,28 @@ describe("session service", () => {
             { event: "need-watch", data: `{"id":"2"}` },
         ]);
     }));
+
+    it("does not generate needWatch from last watcher", integrate(async ({bus}) => {
+        const cli = new ServerSideEvents();
+        const ids = ["1", "2"];
+
+        const watcherSid = await session.create(cli, {}, ids);
+        watcherSid.should.not.be.empty;
+
+        const expectedSentState = {
+            [watcherSid]: [
+                { event: "session-created", data: `{"id":"${watcherSid}"}` },
+            ],
+        };
+        bus.sent.should.deep.equal(expectedSentState);
+
+        // when watcherSid leaves...
+        await session.destroy(
+            watcherSid,
+            ids,
+        );
+
+        // ... no new messages should have be sent
+        bus.sent.should.deep.equal(expectedSentState);
+    }));
 });
