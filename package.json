@@ -22,7 +22,7 @@
     "dev": "ts-node-dev src/index.ts",
     "deploy": "now --public && now alias",
     "lint": "tslint -p .",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
   },
   "author": "Daniel Leong",
