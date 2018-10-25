@@ -21,11 +21,16 @@ export async function init() {
 }
 
 export interface IProviderService {
+    knownProviders: string[];
     byId(providerId: string): IProvider<any>;
     forSheet(sheetId: string): IProvider<any>;
 }
 
 export class ProviderService implements IProviderService {
+
+    get knownProviders(): string[] {
+        return knownProviders;
+    }
 
     public byId(providerId: string): IProvider<any> {
         const inst = providers[providerId];

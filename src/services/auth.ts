@@ -1,4 +1,4 @@
-import { knownProviders, providers } from "./provider";
+import services from "../services";
 
 export interface IAuth {
     gdrive?: any;
@@ -10,11 +10,12 @@ export interface IAuthService {
 
 export class AuthService implements IAuthService {
     public async validate(auth: any): Promise<IAuth> | never {
-        for (const provider of knownProviders) {
-            const thisAuth = auth[provider];
+        for (const providerId of services.provider.knownProviders) {
+            const thisAuth = auth[providerId];
             if (!thisAuth) continue;
 
-            await providers[provider].validate(auth);
+            const provider = services.provider.byId(providerId);
+            await provider.validate(thisAuth);
         }
         return auth as IAuth;
     }

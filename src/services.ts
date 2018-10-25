@@ -3,9 +3,9 @@ import { IProviderService, ProviderService } from "./services/provider";
 import { ISSEService, SSEService } from "./services/sse";
 import { ITokenService, TokenService } from "./services/token";
 
-export default {
-    auth: new AuthService() as IAuthService,
-    provider: new ProviderService() as IProviderService,
-    sse: new SSEService() as ISSEService,
-    token: new TokenService() as ITokenService,
+export default { } as any as {
+    auth: IAuthService,
+    provider: IProviderService,
+    sse: ISSEService,
+    token: ITokenService,
 };

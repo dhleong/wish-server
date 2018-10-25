@@ -3,6 +3,7 @@ import { IHandyRedis } from "handy-redis";
 import { IEvent, ServerSideEvents } from "lightside";
 
 import services from "../src/services";
+import { AuthService } from "../src/services/auth";
 import { IProviderService } from "../src/services/provider";
 import { IProvider, IWatchParams } from "../src/services/provider/core";
 import * as redis from "../src/services/redis";
@@ -31,12 +32,15 @@ class FakeTokenService implements ITokenService {
 
     public unpack(token: string): ITokenPayload {
         return {
-            fileId: token,
+            sheetId: token,
         };
     }
 }
 
-class FakeProvider implements IProvider<any> {
+export class FakeProvider implements IProvider<any> {
+
+    public validateRequests: any[] = [];
+
     public async watch(config: IWatchParams<any>, channelId: string, isNewChannel: boolean): Promise<any> {
         // nop
     }
@@ -44,13 +48,18 @@ class FakeProvider implements IProvider<any> {
         // nop
     }
     public async validate(auth: any): Promise<any> {
-        // nop
+        this.validateRequests.push(auth);
     }
 }
 
 class FakeProviderService implements IProviderService {
+
+    public readonly knownProviders: string[] = ["fake"];
+
+    private readonly inst = new FakeProvider();
+
     public byId(providerId: string): IProvider<any> {
-        return new FakeProvider();
+        return this.inst;
     }
 
     public forSheet(sheetId: string): IProvider<any> {
@@ -58,10 +67,17 @@ class FakeProviderService implements IProviderService {
     }
 }
 
-export function integrate(testFn: (redis: IHandyRedis, bus: TestableBus) => Promise<any>): () => Promise<any> {
+export interface ITestFnInputs {
+    provider: FakeProviderService;
+    redis: IHandyRedis;
+    bus: TestableBus;
+}
+
+export function integrate(testFn: (args: ITestFnInputs) => Promise<any>): () => Promise<any> {
     return async () => {
         // stub out services
         const bus = new TestableBus();
+        services.auth = new AuthService();
         services.sse = new SSEService(bus);
 
         services.provider = new FakeProviderService();
@@ -70,7 +86,11 @@ export function integrate(testFn: (redis: IHandyRedis, bus: TestableBus) => Prom
         await redis.client.flushdb();
 
         try {
-            await testFn(redis.client, bus);
+            await testFn({
+                bus,
+                provider: services.provider as FakeProviderService,
+                redis: redis.client,
+            });
 
         } finally {
             // let our node process finish:

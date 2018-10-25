@@ -8,10 +8,13 @@ import serve from "koa-static";
 import { InputError } from "./errors";
 import { logger } from "./log";
 import { createRoutes } from "./routes";
-import { init as initProviders } from "./services/provider";
+import services from "./services";
+import { AuthService } from "./services/auth";
+import { init as initProviders, ProviderService } from "./services/provider";
 import { init as initPush } from "./services/push";
 import { init as initRedis } from "./services/redis";
-import { init as initToken } from "./services/token";
+import { SSEService } from "./services/sse";
+import { init as initToken, TokenService } from "./services/token";
 
 const {
     CORS_HOST,
@@ -63,6 +66,11 @@ async function initServices() {
     await initPush();
     await initRedis();
     await initToken();
+
+    services.auth = new AuthService();
+    services.provider = new ProviderService();
+    services.sse = new SSEService();
+    services.token = new TokenService();
 }
 
 async function run() {

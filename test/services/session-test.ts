@@ -8,7 +8,7 @@ import { integrate } from "../test-integration";
 chai.should();
 
 describe("session service", () => {
-    it("nominates new watchers on destroy", integrate(async (redis, bus) => {
+    it("nominates new watchers on destroy", integrate(async ({ redis, bus }) => {
         const cli = new ServerSideEvents();
         const ids = ["1", "2"];
 

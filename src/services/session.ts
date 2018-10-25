@@ -18,7 +18,7 @@ export async function create(
     }
 
     // validate auth
-    const auth = services.auth.validate(rawAuth);
+    const auth = await services.auth.validate(rawAuth);
 
     // create session and listen to it
     const sessionId = uuid();
