@@ -8,6 +8,7 @@ import serve from "koa-static";
 import { InputError } from "./errors";
 import { logger } from "./log";
 import { createRoutes } from "./routes";
+import { init as initProviders } from "./services/provider";
 import { init as initPush } from "./services/push";
 import { init as initRedis } from "./services/redis";
 import { init as initToken } from "./services/token";
@@ -58,6 +59,7 @@ function initServer() {
 }
 
 async function initServices() {
+    await initProviders();
     await initPush();
     await initRedis();
     await initToken();
