@@ -38,7 +38,13 @@ function initServer() {
             if (e instanceof InputError) {
                 ctx.status = 400;
                 ctx.body = {error: e.message};
-                logger.warn(`InputError @${ctx.url}`, {error: e.message});
+
+                const extra: {error: Error} = {error: e};
+                if (e.cause) {
+                    extra.error = e.cause;
+                }
+
+                logger.warn(`InputError @${ctx.url}`, extra);
             } else {
                 logger.error(`Unhandled error @${ctx.url}`, {error: e});
                 ctx.status = 500;

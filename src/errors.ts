@@ -4,8 +4,8 @@
  * This is returned to REST clients as a 400
  */
 export class InputError extends Error {
-    constructor(message: string = "Invalid Input") {
-        super(message);
+    constructor(message: string = "Invalid Input", public cause: Error | null = null) {
+        super(message + (cause ? `: ${cause.message}` : ""));
     }
 }
 
