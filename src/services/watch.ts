@@ -1,6 +1,7 @@
 import uuid from "uuid";
 
 import config from "../config";
+import { InputError } from "../errors";
 import services from "../services";
 import { unpackSheetId } from "../util/sheet";
 import { IAuth } from "./auth";
@@ -69,7 +70,13 @@ async function _createOne(
         fileId: sid.id,
         token,
     };
-    await provider.watch(watchConfig, channel, true);
+    try {
+        await provider.watch(watchConfig, channel, true);
+    } catch (e) {
+        if (e.message.startsWith("File not found")) {
+            throw new InputError(`No such sheet ${sheetId}`, e);
+        }
+    }
 
     // atomically set watcher:ID <- sessionId IFF watcher:ID is NIL
     const actualWatcher = await setexIfNull.eval([`watcher:${sheetId}`], [
