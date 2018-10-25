@@ -36,6 +36,7 @@ export async function create(
         }
     }
 
+    // attempt to watch anything we can
     return Promise.all(needWatchFiles.map(id =>
         _createOne(sessionId, auth, id),
     ));

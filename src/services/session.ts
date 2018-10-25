@@ -31,10 +31,10 @@ export async function create(
         event: "session-created",
     });
 
-    // record interest so we can get pushes
-    await setWatching(sessionId, interestedIds, true);
+    // handle client disconnect
     client.once("close", async () => {
         try {
+            logger.info(`Destroy ${sessionId}`);
             await destroy(sessionId, interestedIds);
         } catch (e) {
             logger.warn(`Error destroying session ${sessionId}`, {error: e});
@@ -47,6 +47,11 @@ export async function create(
     // attempt to watch any files that need it;
     // the `watch` service will ignore dups
     await watch.create(sessionId, auth, interestedIds);
+
+    // record interest so we can get pushes
+    // we do this *after* attempting to create watches so
+    // there's no dangling data if it fails
+    await setWatching(sessionId, interestedIds, true);
 
     // send "session-created"
     services.sse.sendSessionCreated(sessionId);
