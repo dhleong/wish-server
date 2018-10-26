@@ -33,6 +33,7 @@ export async function init() {
 }
 
 export const GET = client.get;
+export const SETEX = client.setex;
 export const HGET = client.hget;
 
 export async function multi(block: (m: redis.Multi) => any) {

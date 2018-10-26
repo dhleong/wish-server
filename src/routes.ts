@@ -12,11 +12,12 @@ export function createRoutes() {
 
     routes.post("/push/send", push.send);
 
-    routes.post("/push/sessions",
+    routes.post("/push/sessions", session.create);
+    routes.get("/push/sessions/:sessionId",
         lightside(),
         darkside({
             bus: services.sse.bus,
-            extractChannelIds: session.create,
+            extractChannelIds: session.connect,
         }),
     );
 

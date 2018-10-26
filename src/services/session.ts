@@ -2,14 +2,49 @@
 import { ServerSideEvents } from "lightside";
 import uuid from "uuid/v4";
 
-import { InputError } from "../errors";
+import { AuthError, InputError } from "../errors";
 import { logger } from "../log";
 import services from "../services";
 import * as redis from "./redis";
 import * as watch from "./watch";
 
-export async function create(
+export async function connect(
     client: ServerSideEvents,
+    sessionId: string,
+) {
+    // load the session
+    const [ idsRaw, _ ] = await redis.multi(m => {
+        m.get(sessionId);
+        m.del(sessionId); // only one person can use this session
+    });
+    if (!idsRaw) {
+        throw new AuthError("No such session");
+    }
+
+    const interestedIds: string[] = JSON.parse(idsRaw as string);
+    if (!(interestedIds && Array.isArray(interestedIds) && interestedIds.length)) {
+        throw new AuthError("No such session");
+    }
+
+    // listen on the channel
+    services.sse.addToChannel(sessionId, client);
+
+    // listen for changes on our interested sheets
+    services.sse.addToChannel(interestedIds, client);
+
+    // handle client disconnect
+    client.once("close", async () => {
+        try {
+            await destroy(sessionId, interestedIds);
+        } catch (e) {
+            logger.warn(`Error destroying session ${sessionId}`, {error: e});
+        }
+    });
+
+    return interestedIds;
+}
+
+export async function create(
     rawAuth: any,
     interestedIds: string[],
 ) {
@@ -22,27 +57,6 @@ export async function create(
 
     // create session and listen to it
     const sessionId = uuid();
-    services.sse.addToChannel(sessionId, client);
-
-    client.send({
-        data: JSON.stringify({
-            id: sessionId,
-        }),
-        event: "session-created",
-    });
-
-    // handle client disconnect
-    client.once("close", async () => {
-        try {
-            logger.info(`Destroy ${sessionId}`);
-            await destroy(sessionId, interestedIds);
-        } catch (e) {
-            logger.warn(`Error destroying session ${sessionId}`, {error: e});
-        }
-    });
-
-    // listen for changes on our interested sheets
-    services.sse.addToChannel(interestedIds, client);
 
     // attempt to watch any files that need it;
     // the `watch` service will ignore dups
@@ -53,8 +67,11 @@ export async function create(
     // there's no dangling data if it fails
     await setWatching(sessionId, interestedIds, true);
 
-    // send "session-created"
-    services.sse.sendSessionCreated(sessionId);
+    // NOTE: because EventSource doesn't support POST,
+    // we have to do two round trips. So, we store the
+    // interested ids on the session for a few minutes
+    // until they come back with the EventSource request
+    await prepareSession(sessionId, interestedIds);
 
     return sessionId;
 }
@@ -107,6 +124,9 @@ export async function destroy(
         throw new InputError(`interestedIds must not be empty`);
     }
 
+    // re-prepare the session in case they reconnect
+    await prepareSession(sessionId, interestedIds);
+
     // stop watching
     await setWatching(sessionId, interestedIds, false);
 
@@ -129,6 +149,13 @@ export async function destroy(
         const newWatcherSession = (newWatcherPairs[i + 1] as string);
         services.sse.sendNeedWatch(newWatcherSession, sheetId);
     }
+}
+
+async function prepareSession(
+    sessionId: string,
+    interestedIds: string[],
+) {
+    return redis.SETEX(sessionId, 5 * 60, JSON.stringify(interestedIds));
 }
 
 async function setWatching(

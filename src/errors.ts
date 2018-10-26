@@ -1,13 +1,29 @@
 
+export class ErrorWithCause extends Error {
+    constructor(message: string, public cause: Error | null = null) {
+        super(message + (cause ? `: ${cause.message}` : ""));
+    }
+}
+
+function newErrorWithCause(defaultMessage: string) {
+    return class extends ErrorWithCause {
+        constructor(message: string = defaultMessage, public cause: Error | null = null) {
+            super(message, cause);
+        }
+    };
+}
+
+/**
+ * An AuthError means bad auth info was provided to a service.
+ * This is returned to REST clients as a 401
+ */
+export const AuthError = newErrorWithCause("Unauthorized");
+
 /**
  * An InputError means bad input was provided to a service.
  * This is returned to REST clients as a 400
  */
-export class InputError extends Error {
-    constructor(message: string = "Invalid Input", public cause: Error | null = null) {
-        super(message + (cause ? `: ${cause.message}` : ""));
-    }
-}
+export const InputError = newErrorWithCause("Invalid input");
 
 /**
  * NOTE: if you need to use this as a type guard, you can simply do:

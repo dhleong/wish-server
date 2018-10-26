@@ -5,7 +5,7 @@ import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
 import serve from "koa-static";
 
-import { InputError } from "./errors";
+import { AuthError, ErrorWithCause, InputError } from "./errors";
 import { logger } from "./log";
 import { createRoutes } from "./routes";
 import services from "./services";
@@ -28,6 +28,17 @@ const corsMiddleware = cors({
     origin: CORS_HOST,
 });
 
+function extraFromError(ctx: Koa.Context, e: ErrorWithCause) {
+    ctx.body = {error: e.message};
+
+    const extra: {error: Error} = {error: e};
+    if (e.cause) {
+        extra.error = e.cause;
+    }
+
+    return extra;
+}
+
 function initServer() {
     router.use("/v1", createRoutes().routes());
 
@@ -35,15 +46,13 @@ function initServer() {
         try {
             await next();
         } catch (e) {
-            if (e instanceof InputError) {
+            if (e instanceof AuthError) {
+                ctx.status = 401;
+                const extra = extraFromError(ctx, e);
+                logger.warn(`AuthError @${ctx.url}`, extra);
+            } else if (e instanceof InputError) {
                 ctx.status = 400;
-                ctx.body = {error: e.message};
-
-                const extra: {error: Error} = {error: e};
-                if (e.cause) {
-                    extra.error = e.cause;
-                }
-
+                const extra = extraFromError(ctx, e);
                 logger.warn(`InputError @${ctx.url}`, extra);
             } else {
                 logger.error(`Unhandled error @${ctx.url}`, {error: e});
