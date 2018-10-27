@@ -57,8 +57,10 @@ export class SSEService implements ISSEService {
 
     protected send(sessionId: string, eventName: string, eventData: any) {
         this.bus.send(sessionId, {
-            data: JSON.stringify(eventData),
-            event: eventName,
+            data: JSON.stringify({
+                data: eventData,
+                event: eventName,
+            }),
         });
     }
 }
