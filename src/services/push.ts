@@ -19,8 +19,6 @@ export async function init() {
  * Webhook receiver for "changed" notifications from a Provider
  */
 export async function send(channel: string, token: string) {
-    logger.info("SEND", {channel, token});
-
     requireInput(channel, "channel");
     requireInput(token, "token");
 
