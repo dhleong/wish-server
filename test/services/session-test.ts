@@ -88,8 +88,8 @@ describe("session service", () => {
         ]);
 
         bus.sent[otherSid].should.deep.equal([
-            { event: "need-watch", data: `{"id":"1"}` },
-            { event: "need-watch", data: `{"id":"2"}` },
+            { data: `{"data":{"id":"1"},"event":"need-watch"}` },
+            { data: `{"data":{"id":"2"},"event":"need-watch"}` },
         ]);
     }));
 
