@@ -2,7 +2,6 @@ import * as Koa from "koa";
 
 import { InputError, requireKey } from "../errors";
 import { IAuth } from "../services/auth";
-import * as redis from "../services/redis";
 import * as session from "../services/session";
 import * as watch from "../services/watch";
 

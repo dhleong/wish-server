@@ -2,7 +2,6 @@ import { createHash } from "crypto";
 import { createHandyClient } from "handy-redis";
 import * as redis from "redis";
 
-import { requireKey } from "../errors";
 import { logger } from "../log";
 
 export const client = createClient();

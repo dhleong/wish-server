@@ -72,7 +72,7 @@ export class GdriveProvider implements IProvider<IGdriveOauth> {
     ) {
         // load resource ID from redis (it's frustrating that
         // it's not the same as the fileId...)
-        const [resourceId, _] = await redis.multi(m => {
+        const [ resourceId ] = await redis.multi(m => {
             const k = `gapi:${channelId}:res`;
             m.get(k);
             m.del(k);
@@ -93,7 +93,8 @@ export class GdriveProvider implements IProvider<IGdriveOauth> {
 
     public async validate(auth: IGdriveOauth) {
         const idToken: string = requireKey(auth, "id_token");
-        const accessToken = requireKey(auth, "access_token");
+        requireKey(auth, "access_token");
+
         await this.oauthClient.verifyIdToken({
             audience: this.oauthClientId,
             idToken,

@@ -1,9 +1,6 @@
-import uuid from "uuid/v4";
 
-import { InputError, requireInput, requireKey } from "../errors";
-import { logger } from "../log";
+import { requireInput } from "../errors";
 import services from "../services";
-import * as redis from "./redis";
 
 /**
  * Webhook receiver for "changed" notifications from a Provider

@@ -13,7 +13,7 @@ export async function connect(
     sessionId: string,
 ) {
     // load the session
-    const [ idsRaw, _ ] = await redis.multi(m => {
+    const [ idsRaw ] = await redis.multi(m => {
         m.get(sessionId);
         m.del(sessionId); // only one person can use this session
     });

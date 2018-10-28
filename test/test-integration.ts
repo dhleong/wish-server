@@ -1,6 +1,6 @@
 import { MemoryBus } from "darkside-sse";
 import { IHandyRedis } from "handy-redis";
-import { IEvent, ServerSideEvents } from "lightside";
+import { IEvent } from "lightside";
 
 import services from "../src/services";
 import { AuthService } from "../src/services/auth";
