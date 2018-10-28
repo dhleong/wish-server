@@ -11,7 +11,6 @@ import { createRoutes } from "./routes";
 import services from "./services";
 import { AuthService } from "./services/auth";
 import { init as initProviders, ProviderService } from "./services/provider";
-import { init as initPush } from "./services/push";
 import { init as initRedis } from "./services/redis";
 import { SSEService } from "./services/sse";
 import { init as initToken, TokenService } from "./services/token";
@@ -78,7 +77,6 @@ function initServer() {
 
 async function initServices() {
     await initProviders();
-    await initPush();
     await initRedis();
     await initToken();
 
