@@ -3,6 +3,7 @@ import { IDarksideBus } from "darkside-sse";
 import { ServerSideEvents } from "lightside";
 import { RedisClient } from "redis";
 
+import { logger } from "../log";
 import * as redis from "./redis";
 
 export interface ISSEService {
@@ -21,6 +22,10 @@ function dup(client: RedisClient): RedisClient {
     // we don't need this client to keep the server alive,
     // so unref to ensure tests can exit cleanly
     c.unref();
+
+    c.on("error", e => {
+        logger.warn("SSE Redis Client error", {error: e});
+    });
 
     return c;
 }
