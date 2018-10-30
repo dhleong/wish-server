@@ -35,16 +35,9 @@ export class GdriveProvider implements IProvider<IGdriveOauth> {
     public async watch(
         config: IWatchParams<IGdriveOauth>,
         channelId: string,
-        isNewChannel: boolean,
+        ttlSeconds: number,
     ) {
-
-        if (!isNewChannel) {
-            // try to delete the old channel and refresh the watch
-            await this.unwatch(config, channelId);
-        }
-
-        // 4 hours:
-        const watchDurationMillis = 4 * 60 * 60000;
+        const watchDurationMillis = ttlSeconds * 1000;
 
         const result = await this.api.files.watch({
             auth: oauth(config.auth),
@@ -62,7 +55,7 @@ export class GdriveProvider implements IProvider<IGdriveOauth> {
             // save this in case we later want to delete it early
             await redis.getClient().setex(
                 `gapi:${channelId}:res`,
-                watchDurationMillis / 1000,
+                ttlSeconds,
                 result.data.resourceId,
             );
         }

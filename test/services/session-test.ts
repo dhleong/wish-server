@@ -51,7 +51,7 @@ describe("session service", () => {
         returnedIds.should.deep.equal(ids);
     }));
 
-    it("nominates new watchers on destroy", integrate(async ({ redis, bus }) => {
+    it("keeps watcher on destroy", integrate(async ({ redis, bus }) => {
         const cli = new ServerSideEvents();
         const ids = ["1", "2"];
 
@@ -81,16 +81,14 @@ describe("session service", () => {
             ids,
         );
 
-        // ... now, otherSid should have been nominated
+        // the old watch is still valid (it expires after several hours);
+        // nothing should have happened
         const watchers = await redis.mget(`watcher:1`, `watcher:2`);
         watchers.should.deep.equal([
-            null, null,
+            watcherSid, watcherSid,
         ]);
 
-        bus.sent[otherSid].should.deep.equal([
-            { data: `{"data":{"id":"1"},"event":"need-watch"}` },
-            { data: `{"data":{"id":"2"},"event":"need-watch"}` },
-        ]);
+        bus.sent.should.be.empty;
     }));
 
     it("does not generate needWatch from last watcher", integrate(async ({bus}) => {

@@ -1,9 +1,7 @@
 import { RedisBus } from "darkside-sse";
 import { IDarksideBus } from "darkside-sse";
 import { ServerSideEvents } from "lightside";
-import { RedisClient } from "redis";
 
-import { logger } from "../log";
 import * as redis from "./redis";
 
 export interface ISSEService {
@@ -12,29 +10,17 @@ export interface ISSEService {
     addToChannel(channelId: string | string[], client: ServerSideEvents): void;
 
     sendChanged(sessionId: string, sheetId: string): void;
-    sendNeedWatch(sessionId: string, sheetId: string): void;
+    // tslint:disable-next-line:unified-signatures since the param moves
+    sendNeedWatch(sessionId: string, sheetId?: string): void;
+    sendNeedWatch(sheetId: string): void;
     sendSessionCreated(sessionId: string): void;
-}
-
-function dup(client: RedisClient): RedisClient {
-    const c = client.duplicate();
-
-    // we don't need this client to keep the server alive,
-    // so unref to ensure tests can exit cleanly
-    c.unref();
-
-    c.on("error", e => {
-        logger.warn("SSE Redis Client error", {error: e});
-    });
-
-    return c;
 }
 
 export class SSEService implements ISSEService {
     constructor(
         public readonly bus: IDarksideBus = new RedisBus(
             redis.getClient().redis,
-            dup(redis.getClient().redis),
+            redis.getPubsub(),
         ),
     ) {}
 
@@ -48,9 +34,13 @@ export class SSEService implements ISSEService {
         });
     }
 
-    public sendNeedWatch(sessionId: string, sheetId: string) {
+    public sendNeedWatch(sheetId: string): void;
+    public sendNeedWatch(sessionId: string, sheetId?: string) {
+        const actualSheetId = sheetId
+            ? sheetId
+            : sessionId;
         this.send(sessionId, "need-watch", {
-            id: sheetId,
+            id: actualSheetId,
         });
     }
 

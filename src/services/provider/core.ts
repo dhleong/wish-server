@@ -17,7 +17,7 @@ export interface IProvider<Auth> {
     watch(
         config: IWatchParams<Auth>,
         channelId: string,
-        isNewChannel: boolean,
+        ttlSeconds: number,
     ): Promise<any>;
 
     unwatch(

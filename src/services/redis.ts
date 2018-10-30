@@ -3,12 +3,35 @@ import { createHandyClient, IHandyRedis } from "handy-redis";
 import * as redis from "redis";
 
 import { logger } from "../log";
+import services from "../services";
 
 let client: IHandyRedis;
+let pubsub: redis.RedisClient;
 
 export function getClient() {
     if (!client) client = createClient();
     return client;
+}
+
+export function getPubsub() {
+    if (!pubsub) pubsub = createPubsub(getClient());
+    return pubsub;
+}
+
+/** NOTE: This should ONLY be used in tests */
+export function swapClient(
+    newRedis: IHandyRedis,
+    newPubsub?: redis.RedisClient,
+): [IHandyRedis, redis.RedisClient] {
+    const oldClient = client;
+    const oldPubsub = pubsub;
+    client = newRedis;
+    if (newPubsub || !newRedis) {
+        pubsub = newPubsub as any; // shh
+    } else {
+        pubsub = createPubsub(newRedis);
+    }
+    return [oldClient, oldPubsub];
 }
 
 function createClient() {
@@ -28,10 +51,33 @@ function createClient() {
     return handy;
 }
 
-export function swapClient(newRedis: IHandyRedis) {
-    const old = client;
-    client = newRedis;
-    return old;
+function createPubsub(base: IHandyRedis) {
+    const c = base.redis.duplicate();
+
+    // we don't need this client to keep the server alive,
+    // so unref to ensure tests can exit cleanly
+    c.unref();
+
+    c.on("error", e => {
+        logger.warn("Pubsub Redis Client error", {error: e});
+    });
+
+    const watcherExpiryEvent = "__keyspace@*__:watcher:*";
+
+    c.config("set", "notify-keyspace-events", "Kx");
+    c.psubscribe(watcherExpiryEvent);
+
+    c.on("pmessage", (pattern, key, event) => {
+        if (pattern !== watcherExpiryEvent) return;
+
+        const watcherIdx = key.indexOf("watcher:");
+        const sheetId = key.substring(watcherIdx + "watcher:".length);
+
+        logger.info(`needWatch for ${sheetId}`);
+        services.sse.sendNeedWatch(sheetId);
+    });
+
+    return c;
 }
 
 export async function init() {

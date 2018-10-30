@@ -41,7 +41,7 @@ export class FakeProvider implements IProvider<any> {
 
     public validateRequests: any[] = [];
 
-    public async watch(config: IWatchParams<any>, channelId: string, isNewChannel: boolean): Promise<any> {
+    public async watch(config: IWatchParams<any>, channelId: string, ttlSeconds: number): Promise<any> {
         // nop
     }
     public async unwatch(config: IWatchParams<any>, channelId: string): Promise<any> {
@@ -86,7 +86,7 @@ export function integrate(testFn: (args: ITestFnInputs) => Promise<any>): () => 
         // create a temporary redis client, to ensure we're
         // running tests locally
         const tempRedis = createHandyClient();
-        const oldRedis = redis.swapClient(tempRedis);
+        const [oldRedis, oldPubsub] = redis.swapClient(tempRedis);
 
         await tempRedis.flushdb();
 
@@ -100,9 +100,10 @@ export function integrate(testFn: (args: ITestFnInputs) => Promise<any>): () => 
         } finally {
             // let our node process finish:
             tempRedis.redis.unref();
+            redis.getPubsub().quit();
 
             // restore any existing client
-            redis.swapClient(oldRedis);
+            redis.swapClient(oldRedis, oldPubsub);
         }
     };
 }

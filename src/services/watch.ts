@@ -16,6 +16,7 @@ export async function create(
     sessionId: string,
     rawAuth: any,
     ids: string[],
+    ttlSeconds: number = config.watcherExpiration,
 ) {
     // validate auth
     const auth = await services.auth.validate(rawAuth);
@@ -38,7 +39,7 @@ export async function create(
 
     // attempt to watch anything we can
     return Promise.all(needWatchFiles.map(id =>
-        _createOne(sessionId, auth, id),
+        _createOne(sessionId, auth, id, ttlSeconds),
     ));
 }
 
@@ -57,6 +58,7 @@ async function _createOne(
     sessionId: string,
     auth: IAuth,
     sheetId: string,
+    ttlSeconds: number,
 ) {
     const token = services.token.generate(sheetId);
     const channel = uuid.v4();
@@ -72,7 +74,7 @@ async function _createOne(
         token,
     };
     try {
-        await provider.watch(watchConfig, channel, true);
+        await provider.watch(watchConfig, channel, ttlSeconds);
     } catch (e) {
         if (e.message.startsWith("File not found")) {
             throw new InputError(`No such sheet ${sheetId}`, e);
@@ -81,7 +83,7 @@ async function _createOne(
 
     // atomically set watcher:ID <- sessionId IFF watcher:ID is NIL
     const actualWatcher = await setexIfNull.eval([`watcher:${sheetId}`], [
-        config.watcherExpiration, sessionId,
+        ttlSeconds, sessionId,
     ]);
     if (actualWatcher !== sessionId) {
         // we did not change watcher:ID; STOP the watch
