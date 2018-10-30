@@ -36,16 +36,17 @@ export function swapClient(newRedis: IHandyRedis) {
 
 export async function init() {
     // verify connection
-    const pong = await client.ping("pong");
+    const pong = await getClient().ping("pong");
     if (pong !== "pong") {
         throw new Error("Unable to verify Redis connection");
     }
 }
 
 export async function multi(block: (m: redis.Multi) => any) {
-    const m = client.multi();
+    const cli = getClient();
+    const m = cli.multi();
     block(m);
-    return await client.execMulti(m);
+    return await cli.execMulti(m);
 }
 
 /**
@@ -67,13 +68,14 @@ export class Script<Args extends any[] = string[]> {
      * `numkeys` is computed for you
      */
     public async eval(keys: string[], args?: Args): Promise<any> {
+        const cli = getClient();
         const actualArgs = args
             ? args.map(it => it.toString())
             : [];
         try {
-            return await client.evalsha(this.sha, keys.length, keys, actualArgs);
+            return await cli.evalsha(this.sha, keys.length, keys, actualArgs);
         } catch (e) {
-            return client.eval(this.lua, keys.length, keys, actualArgs);
+            return cli.eval(this.lua, keys.length, keys, actualArgs);
         }
     }
 }
