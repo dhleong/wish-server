@@ -3,12 +3,28 @@
   "version": "1.0.0",
   "description": "Simple backend for the WISH Project",
   "main": "src/index.ts",
+  "now": {
+    "alias": "wish-server",
+    "env": {
+      "CORS_HOST": "https://dhleong.github.io",
+      "GAPI_PUSH_URL": "https://wish-server.now.sh/v1/push/send",
+      "GAPI_OAUTH_ID": "@wish-gapi-oauth-id",
+      "JWT_SECRET": "@wish-jwt-secret",
+      "VAPID_PUBLIC_KEY": "@wish-vapid-public-key",
+      "VAPID_PRIVATE_KEY": "@wish-vapid-private-key",
+      "REDIS_ENDPOINT": "@wish-redis-endpoint",
+      "REDIS_PASSWORD": "@wish-redis-password"
+    }
+  },
   "scripts": {
-    "build": "npm run lint && npm run build:ts",
+    "build": "npm run check && npm run build:ts",
     "build:ts": "tsc -p .",
     "check": "npm run lint && npm test",
     "dev": "ts-node-dev src/index.ts",
-    "deploy": "npm run build && npm test && now --public && now alias",
+    "deploy": "npm run build && npm run publish:local",
+    "now-build": "npm run build:ts",
+    "publish:local": "now --public && now alias",
+    "publish:ci": "now --public --token $NOW_TOKEN && now alias --token $NOW_TOKEN",
     "lint": "tslint -p .",
     "start": "node dist/src/index.js",
     "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
