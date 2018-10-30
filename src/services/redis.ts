@@ -1,10 +1,15 @@
 import { createHash } from "crypto";
-import { createHandyClient } from "handy-redis";
+import { createHandyClient, IHandyRedis } from "handy-redis";
 import * as redis from "redis";
 
 import { logger } from "../log";
 
-export const client = createClient();
+let client: IHandyRedis;
+
+export function getClient() {
+    if (!client) client = createClient();
+    return client;
+}
 
 function createClient() {
     const endpoint = process.env.REDIS_ENDPOINT;
@@ -23,6 +28,12 @@ function createClient() {
     return handy;
 }
 
+export function swapClient(newRedis: IHandyRedis) {
+    const old = client;
+    client = newRedis;
+    return old;
+}
+
 export async function init() {
     // verify connection
     const pong = await client.ping("pong");
@@ -30,10 +41,6 @@ export async function init() {
         throw new Error("Unable to verify Redis connection");
     }
 }
-
-export const GET = client.get;
-export const SETEX = client.setex;
-export const HGET = client.hget;
 
 export async function multi(block: (m: redis.Multi) => any) {
     const m = client.multi();

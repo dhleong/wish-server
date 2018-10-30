@@ -1,5 +1,5 @@
 import { MemoryBus } from "darkside-sse";
-import { IHandyRedis } from "handy-redis";
+import { createHandyClient, IHandyRedis } from "handy-redis";
 import { IEvent } from "lightside";
 
 import services from "../src/services";
@@ -83,18 +83,26 @@ export function integrate(testFn: (args: ITestFnInputs) => Promise<any>): () => 
         services.provider = new FakeProviderService();
         services.token = new FakeTokenService();
 
-        await redis.client.flushdb();
+        // create a temporary redis client, to ensure we're
+        // running tests locally
+        const tempRedis = createHandyClient();
+        const oldRedis = redis.swapClient(tempRedis);
+
+        await tempRedis.flushdb();
 
         try {
             await testFn({
                 bus,
                 provider: services.provider as FakeProviderService,
-                redis: redis.client,
+                redis: tempRedis,
             });
 
         } finally {
             // let our node process finish:
-            redis.client.redis.unref();
+            tempRedis.redis.unref();
+
+            // restore any existing client
+            redis.swapClient(oldRedis);
         }
     };
 }

@@ -155,7 +155,7 @@ async function prepareSession(
     sessionId: string,
     interestedIds: string[],
 ) {
-    return redis.SETEX(sessionId, 5 * 60, JSON.stringify(interestedIds));
+    return redis.getClient().setex(sessionId, 5 * 60, JSON.stringify(interestedIds));
 }
 
 async function setWatching(

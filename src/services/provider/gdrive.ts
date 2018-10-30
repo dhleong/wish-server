@@ -60,7 +60,11 @@ export class GdriveProvider implements IProvider<IGdriveOauth> {
 
         if (result.data.resourceId) {
             // save this in case we later want to delete it early
-            await redis.client.setex(`gapi:${channelId}:res`, watchDurationMillis / 1000, result.data.resourceId);
+            await redis.getClient().setex(
+                `gapi:${channelId}:res`,
+                watchDurationMillis / 1000,
+                result.data.resourceId,
+            );
         }
 
         return result.data;

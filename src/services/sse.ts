@@ -33,8 +33,8 @@ function dup(client: RedisClient): RedisClient {
 export class SSEService implements ISSEService {
     constructor(
         public readonly bus: IDarksideBus = new RedisBus(
-            redis.client.redis,
-            dup(redis.client.redis),
+            redis.getClient().redis,
+            dup(redis.getClient().redis),
         ),
     ) {}
 
