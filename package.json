@@ -4,11 +4,11 @@
   "description": "Simple backend for the WISH Project",
   "main": "src/index.ts",
   "scripts": {
-    "build": "npm run check && npm run build:ts",
+    "build": "npm run lint && npm run build:ts",
     "build:ts": "tsc -p .",
     "check": "npm run lint && npm test",
     "dev": "ts-node-dev src/index.ts",
-    "deploy": "npm run build && now --public && now alias",
+    "deploy": "npm run build && npm test && now --public && now alias",
     "lint": "tslint -p .",
     "start": "node dist/src/index.js",
     "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
