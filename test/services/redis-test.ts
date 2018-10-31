@@ -1,5 +1,6 @@
 import * as chai from "chai";
 
+import { EventId } from "../../src/services/sse";
 import * as watch from "../../src/services/watch";
 import { integrate } from "../test-integration";
 
@@ -29,7 +30,10 @@ describe("Redis Service", () => {
         // request sent
         bus.sent.should.deep.equal({
             mySheetId: [
-                {data: `{"data":{"id":"mySheetId"},"event":"need-watch"}`},
+                {
+                    comment: EventId.NeedWatch,
+                    data: `{"data":{"id":"mySheetId"},"event":"need-watch"}`,
+                },
             ],
         });
     }));

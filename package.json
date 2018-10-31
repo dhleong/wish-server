@@ -27,7 +27,8 @@
     "publish:ci": "now --public --token $NOW_TOKEN && now alias --token $NOW_TOKEN",
     "lint": "tslint -p .",
     "start": "node dist/src/index.js",
-    "test": "mocha -r ts-node/register 'test/**/*-test.ts'"
+    "test": "mocha -r ts-node/register 'test/**/*-test.ts'",
+    "test:watch": "mocha -r ts-node/register 'test/**/*-test.ts' --watch --watch-extensions ts"
   },
   "author": "Daniel Leong",
   "license": "MIT",
@@ -37,7 +38,7 @@
   },
   "dependencies": {
     "@koa/cors": "^2.2.2",
-    "darkside-sse": "^1.0.2",
+    "darkside-sse": "^1.1.1",
     "google-auth-library": "^2.0.0",
     "googleapis": "^34.0.0",
     "handy-redis": "^1.5.1",
