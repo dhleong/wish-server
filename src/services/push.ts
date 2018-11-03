@@ -5,7 +5,7 @@ import services from "../services";
 /**
  * Webhook receiver for "changed" notifications from a Provider
  */
-export async function send(channel: string, token: string) {
+export async function notifyChanged(channel: string, token: string) {
     requireInput(channel, "channel");
     requireInput(token, "token");
 

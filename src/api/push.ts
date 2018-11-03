@@ -28,6 +28,6 @@ async function sendGapi(ctx: Koa.Context) {
     const channel = ctx.headers["x-goog-channel-id"];
     const token: string = requireKey(ctx.headers, "x-goog-channel-token");
 
-    await push.send(channel, token);
+    await push.notifyChanged(channel, token);
     ctx.status = 201;
 }
