@@ -1,6 +1,7 @@
 import * as Koa from "koa";
 
 import { InputError, requireKey } from "../errors";
+import { logger } from "../log";
 import { IAuth } from "../services/auth";
 import * as session from "../services/session";
 import * as watch from "../services/watch";
@@ -27,9 +28,21 @@ export async function addWatch(ctx: Koa.Context) {
 export async function connect(ctx: Koa.Context): Promise<string[]> {
     const { sessionId } = ctx.params;
 
-    const ids = await session.connect(ctx.events, sessionId);
+    const {
+        channels,
+        interestedIds,
+    } = await session.connect(sessionId);
 
-    return [sessionId].concat(ids);
+    // handle client disconnect
+    ctx.events.once("close", async () => {
+        try {
+            await session.destroy(sessionId, interestedIds);
+        } catch (e) {
+            logger.warn(`Error destroying session ${sessionId}`, {error: e});
+        }
+    });
+
+    return channels;
 }
 
 export async function create(ctx: Koa.Context): Promise<void> {

@@ -17,5 +17,5 @@ export async function notifyChanged(channel: string, token: string) {
 
     // NOTE: anyone interested in this sheet is listening
     // on a channel named by the sheetId
-    services.sse.sendChanged(sheetId, sheetId);
+    services.channels.sendChanged(sheetId, sheetId);
 }

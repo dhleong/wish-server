@@ -1,6 +1,6 @@
 import * as chai from "chai";
 
-import { EventId } from "../../src/services/sse";
+import { EventId } from "../../src/services/channels";
 import * as watch from "../../src/services/watch";
 import { integrate } from "../test-integration";
 
@@ -11,7 +11,7 @@ const sleep = (durationMillis: number) => new Promise(resolve => {
 });
 
 describe("Redis Service", () => {
-    it("dispatches needWatch when on expire", integrate(async ({ bus }) => {
+    it("dispatches needWatch when on expire", integrate(async ({ channels }) => {
         const sessionId = "my-session";
         const ttl = 1;
         await watch.create(
@@ -22,17 +22,17 @@ describe("Redis Service", () => {
         );
 
         // nothing yet
-        bus.sent.should.be.empty;
+        channels.sent.should.be.empty;
 
         // sleep for a tiny bit to wait for the expiration
         await sleep(1500);
 
         // request sent
-        bus.sent.should.deep.equal({
+        channels.sent.should.deep.equal({
             mySheetId: [
                 {
-                    comment: EventId.NeedWatch,
-                    data: `{"data":{"id":"mySheetId"},"event":"need-watch"}`,
+                    data: { id: "mySheetId" },
+                    event: EventId.NeedWatch,
                 },
             ],
         });

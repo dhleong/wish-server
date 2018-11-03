@@ -1,24 +1,13 @@
 import { MemoryBus, RedisBus } from "darkside-sse";
 import { IDarksideBus } from "darkside-sse";
-import { IEvent, ServerSideEvents } from "lightside";
+import { IEvent } from "lightside";
 
 import config from "../config";
+import { BaseChannelsService, EventId, IChannelsService } from "./channels";
 import * as redis from "./redis";
 
-export interface ISSEService {
+export interface ISSEService extends IChannelsService {
     bus: IDarksideBus;
-
-    addToChannel(channelId: string | string[], client: ServerSideEvents): void;
-
-    sendChanged(sessionId: string, sheetId: string): void;
-    // tslint:disable-next-line:unified-signatures since the param moves
-    sendNeedWatch(sessionId: string, sheetId?: string): void;
-    sendNeedWatch(sheetId: string): void;
-}
-
-export enum EventId {
-    Changed = "changed",
-    NeedWatch = "need-watch",
 }
 
 /**
@@ -92,32 +81,14 @@ export class SelectiveMemoryBus extends MemoryBus {
     }
 }
 
-export class SSEService implements ISSEService {
+export class SSEService extends BaseChannelsService implements ISSEService {
     constructor(
         public readonly bus: IDarksideBus = new RedisBus(
             redis.getClient().redis,
             redis.getPubsub(),
         ),
-    ) {}
-
-    public addToChannel(channelId: string | string[], client: ServerSideEvents) {
-        this.bus.register(channelId, client);
-    }
-
-    public sendChanged(sessionId: string, sheetId: string) {
-        this.send(sessionId, EventId.Changed, {
-            id: sheetId,
-        });
-    }
-
-    public sendNeedWatch(sheetId: string): void;
-    public sendNeedWatch(sessionId: string, sheetId?: string) {
-        const actualSheetId = sheetId
-            ? sheetId
-            : sessionId;
-        this.send(sessionId, EventId.NeedWatch, {
-            id: actualSheetId,
-        });
+    ) {
+        super();
     }
 
     protected send(sessionId: string, eventName: string, eventData: any) {

@@ -10,8 +10,10 @@ import { logger } from "./log";
 import { createRoutes } from "./routes";
 import services from "./services";
 import { AuthService } from "./services/auth";
+import { CompositeChannelsService } from "./services/channels";
 import { init as initProviders, ProviderService } from "./services/provider";
 import { init as initRedis } from "./services/redis";
+import { SocketIoService } from "./services/sio";
 import { SSEService } from "./services/sse";
 import { init as initToken, TokenService } from "./services/token";
 
@@ -71,6 +73,9 @@ function initServer() {
             ? addr
             : `${addr.address}:${addr.port}`;
 
+        // socket.io service is special and gets init here:
+        services.channelTypes.sio = new SocketIoService(server, CORS_HOST);
+
         logger.info(`Listening on ${info}`);
     });
 }
@@ -81,9 +86,11 @@ async function initServices() {
     await initToken();
 
     services.auth = new AuthService();
+    services.channels = new CompositeChannelsService();
     services.provider = new ProviderService();
-    services.sse = new SSEService();
     services.token = new TokenService();
+
+    services.channelTypes.sse = new SSEService();
 }
 
 async function run() {

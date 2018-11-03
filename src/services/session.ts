@@ -1,15 +1,12 @@
 
-import { ServerSideEvents } from "lightside";
 import uuid from "uuid/v4";
 
 import { AuthError, InputError } from "../errors";
-import { logger } from "../log";
 import services from "../services";
 import * as redis from "./redis";
 import * as watch from "./watch";
 
 export async function connect(
-    client: ServerSideEvents,
     sessionId: string,
 ) {
     // load the session
@@ -26,22 +23,13 @@ export async function connect(
         throw new AuthError("No such session");
     }
 
-    // listen on the channel
-    services.sse.addToChannel(sessionId, client);
+    // we're interested in a channel just for our session,
+    // and one for each of the sheets we're interested in
+    return {
+        interestedIds,
 
-    // listen for changes on our interested sheets
-    services.sse.addToChannel(interestedIds, client);
-
-    // handle client disconnect
-    client.once("close", async () => {
-        try {
-            await destroy(sessionId, interestedIds);
-        } catch (e) {
-            logger.warn(`Error destroying session ${sessionId}`, {error: e});
-        }
-    });
-
-    return interestedIds;
+        channels: [sessionId].concat(interestedIds),
+    };
 }
 
 export async function create(
