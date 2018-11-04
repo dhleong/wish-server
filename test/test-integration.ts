@@ -1,27 +1,26 @@
-import { MemoryBus } from "darkside-sse";
 import { createHandyClient, IHandyRedis } from "handy-redis";
-import { IEvent } from "lightside";
 
 import services from "../src/services";
 import { AuthService } from "../src/services/auth";
+import { DistributedChannelsService, EventId } from "../src/services/channels";
 import { IProviderService } from "../src/services/provider";
 import { IProvider, IWatchParams } from "../src/services/provider/core";
 import * as redis from "../src/services/redis";
-import { SSEService } from "../src/services/sse";
 import { ITokenPayload, ITokenService } from "../src/services/token";
 
-class TestableBus extends MemoryBus {
-
+class FakeChannelsService extends DistributedChannelsService {
     public sent: {[channelId: string]: any[]} = {};
 
-    public send(channel: string, event: string | Buffer | IEvent): boolean {
+    constructor() {
+        super(null as any, null as any); // HACKS!
+    }
+
+    protected send(channel: string, event: EventId, data: any): void {
         if (!this.sent[channel]) {
             this.sent[channel] = [];
         }
 
-        this.sent[channel].push(event);
-
-        return true;
+        this.sent[channel].push({ event, data });
     }
 }
 
@@ -68,17 +67,16 @@ class FakeProviderService implements IProviderService {
 }
 
 export interface ITestFnInputs {
+    channels: FakeChannelsService;
     provider: FakeProviderService;
     redis: IHandyRedis;
-    bus: TestableBus;
 }
 
 export function integrate(testFn: (args: ITestFnInputs) => Promise<any>): () => Promise<any> {
     return async () => {
         // stub out services
-        const bus = new TestableBus();
         services.auth = new AuthService();
-        services.sse = new SSEService(bus);
+        services.channels = new FakeChannelsService();
 
         services.provider = new FakeProviderService();
         services.token = new FakeTokenService();
@@ -92,7 +90,7 @@ export function integrate(testFn: (args: ITestFnInputs) => Promise<any>): () => 
 
         try {
             await testFn({
-                bus,
+                channels: services.channels as FakeChannelsService,
                 provider: services.provider as FakeProviderService,
                 redis: tempRedis,
             });

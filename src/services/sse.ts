@@ -1,24 +1,12 @@
-import { MemoryBus, RedisBus } from "darkside-sse";
+import { MemoryBus } from "darkside-sse";
 import { IDarksideBus } from "darkside-sse";
-import { IEvent, ServerSideEvents } from "lightside";
+import { IEvent } from "lightside";
 
 import config from "../config";
-import * as redis from "./redis";
+import { EventId, IChannelServiceImpl } from "./channels";
 
-export interface ISSEService {
+export interface ISSEService extends IChannelServiceImpl {
     bus: IDarksideBus;
-
-    addToChannel(channelId: string | string[], client: ServerSideEvents): void;
-
-    sendChanged(sessionId: string, sheetId: string): void;
-    // tslint:disable-next-line:unified-signatures since the param moves
-    sendNeedWatch(sessionId: string, sheetId?: string): void;
-    sendNeedWatch(sheetId: string): void;
-}
-
-export enum EventId {
-    Changed = "changed",
-    NeedWatch = "need-watch",
 }
 
 /**
@@ -94,33 +82,10 @@ export class SelectiveMemoryBus extends MemoryBus {
 
 export class SSEService implements ISSEService {
     constructor(
-        public readonly bus: IDarksideBus = new RedisBus(
-            redis.getClient().redis,
-            redis.getPubsub(),
-        ),
-    ) {}
+        public readonly bus: IDarksideBus = new SelectiveMemoryBus(),
+    ) { }
 
-    public addToChannel(channelId: string | string[], client: ServerSideEvents) {
-        this.bus.register(channelId, client);
-    }
-
-    public sendChanged(sessionId: string, sheetId: string) {
-        this.send(sessionId, EventId.Changed, {
-            id: sheetId,
-        });
-    }
-
-    public sendNeedWatch(sheetId: string): void;
-    public sendNeedWatch(sessionId: string, sheetId?: string) {
-        const actualSheetId = sheetId
-            ? sheetId
-            : sessionId;
-        this.send(sessionId, EventId.NeedWatch, {
-            id: actualSheetId,
-        });
-    }
-
-    protected send(sessionId: string, eventName: string, eventData: any) {
+    public send(sessionId: string, eventName: string, eventData: any) {
         this.bus.send(sessionId, {
             comment: eventName === EventId.NeedWatch
                 ? EventId.NeedWatch

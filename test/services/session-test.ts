@@ -1,8 +1,6 @@
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import { ServerSideEvents } from "lightside";
-
 import { AuthError } from "../../src/errors";
 import * as session from "../../src/services/session";
 import { integrate } from "../test-integration";
@@ -17,14 +15,11 @@ describe("session service", () => {
         const sessionId = await session.create({}, ids);
         sessionId.should.not.be.empty;
 
-        const cli = new ServerSideEvents();
-        const channels = await session.connect(cli, sessionId);
-        channels.should.deep.equal(ids);
+        const { interestedIds } = await session.connect(sessionId);
+        interestedIds.should.deep.equal(ids);
 
         // session IDs are one-time use for connect
-        const shadyCli = new ServerSideEvents();
         await session.connect(
-            shadyCli,
             sessionId,
         ).should.eventually.be.rejectedWith(AuthError);
     }));
@@ -35,24 +30,19 @@ describe("session service", () => {
         const sessionId = await session.create({}, ids);
         sessionId.should.not.be.empty;
 
-        const cli = new ServerSideEvents();
-        const channels = await session.connect(cli, sessionId);
-        channels.should.deep.equal(ids);
+        const { interestedIds } = await session.connect(sessionId);
+        interestedIds.should.deep.equal(ids);
 
         // the client loses connection briefly
         await session.destroy(sessionId, ids);
 
         // if they come back in time, the session is still waiting.
         // Otherwise, they'll have to create a new session (which is fine)
-        const returnedIds = await session.connect(
-            cli,
-            sessionId,
-        );
+        const { interestedIds: returnedIds } = await session.connect(sessionId);
         returnedIds.should.deep.equal(ids);
     }));
 
-    it("keeps watcher on destroy", integrate(async ({ redis, bus }) => {
-        const cli = new ServerSideEvents();
+    it("keeps watcher on destroy", integrate(async ({ redis, channels }) => {
         const ids = ["1", "2"];
 
         const watcherSid = await session.create({}, ids);
@@ -63,7 +53,7 @@ describe("session service", () => {
             watcherSid, watcherSid,
         ]);
 
-        await session.connect(cli, watcherSid);
+        await session.connect(watcherSid);
 
         const otherSid = await session.create({}, ids);
         otherSid.should.not.be.empty;
@@ -73,7 +63,7 @@ describe("session service", () => {
             watcherSid, watcherSid,
         ]);
 
-        await session.connect(cli, otherSid);
+        await session.connect(otherSid);
 
         // when watcherSid leaves...
         await session.destroy(
@@ -88,19 +78,18 @@ describe("session service", () => {
             watcherSid, watcherSid,
         ]);
 
-        bus.sent.should.be.empty;
+        channels.sent.should.be.empty;
     }));
 
-    it("does not generate needWatch from last watcher", integrate(async ({bus}) => {
-        const cli = new ServerSideEvents();
+    it("does not generate needWatch from last watcher", integrate(async ({ channels }) => {
         const ids = ["1", "2"];
 
         const watcherSid = await session.create({}, ids);
         watcherSid.should.not.be.empty;
 
-        bus.sent.should.be.empty;
+        channels.sent.should.be.empty;
 
-        await session.connect(cli, watcherSid);
+        await session.connect(watcherSid);
 
         // when watcherSid leaves...
         await session.destroy(
@@ -109,6 +98,6 @@ describe("session service", () => {
         );
 
         // ... no new messages should have be sent
-        bus.sent.should.be.empty;
+        channels.sent.should.be.empty;
     }));
 });

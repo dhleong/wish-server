@@ -74,7 +74,7 @@ function createPubsub(base: IHandyRedis) {
         const sheetId = key.substring(watcherIdx + "watcher:".length);
 
         logger.info(`needWatch for ${sheetId}`);
-        services.sse.sendNeedWatch(sheetId);
+        services.channels.sendNeedWatch(sheetId);
     });
 
     return c;

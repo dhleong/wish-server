@@ -13,13 +13,17 @@ export function createRoutes() {
     routes.post("/push/send", push.send);
 
     routes.post("/push/sessions", session.create);
-    routes.get("/push/sessions/:sessionId",
+    routes.get("/push/sessions/sse/:sessionId",
         lightside(),
         darkside({
-            bus: services.sse.bus,
+            bus: services.channelTypes.sse.bus,
             extractChannelIds: session.connect,
         }),
     );
+
+    // NOTE: socket.io is on /push/sessions/io/:sessionId,
+    // but can't be initialized here because it *needs*
+    // to attach directly to the server :\
 
     routes.post("/push/sessions/watch", session.addWatch);
 

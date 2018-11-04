@@ -1,6 +1,7 @@
 import * as chai from "chai";
 
-import { EventId, SelectiveMemoryBus } from "../../src/services/sse";
+import { EventId } from "../../src/services/channels";
+import { SelectiveMemoryBus } from "../../src/services/sse";
 import { TestableSSE } from "../testable-sse";
 
 chai.should();

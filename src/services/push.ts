@@ -5,7 +5,7 @@ import services from "../services";
 /**
  * Webhook receiver for "changed" notifications from a Provider
  */
-export async function send(channel: string, token: string) {
+export async function notifyChanged(channel: string, token: string) {
     requireInput(channel, "channel");
     requireInput(token, "token");
 
@@ -17,5 +17,5 @@ export async function send(channel: string, token: string) {
 
     // NOTE: anyone interested in this sheet is listening
     // on a channel named by the sheetId
-    services.sse.sendChanged(sheetId, sheetId);
+    services.channels.sendChanged(sheetId, sheetId);
 }
