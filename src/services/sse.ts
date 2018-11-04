@@ -1,12 +1,11 @@
-import { MemoryBus, RedisBus } from "darkside-sse";
+import { MemoryBus } from "darkside-sse";
 import { IDarksideBus } from "darkside-sse";
 import { IEvent } from "lightside";
 
 import config from "../config";
-import { BaseChannelsService, EventId, IChannelsService } from "./channels";
-import * as redis from "./redis";
+import { EventId, IChannelServiceImpl } from "./channels";
 
-export interface ISSEService extends IChannelsService {
+export interface ISSEService extends IChannelServiceImpl {
     bus: IDarksideBus;
 }
 
@@ -81,17 +80,12 @@ export class SelectiveMemoryBus extends MemoryBus {
     }
 }
 
-export class SSEService extends BaseChannelsService implements ISSEService {
+export class SSEService implements ISSEService {
     constructor(
-        public readonly bus: IDarksideBus = new RedisBus(
-            redis.getClient().redis,
-            redis.getPubsub(),
-        ),
-    ) {
-        super();
-    }
+        public readonly bus: IDarksideBus = new SelectiveMemoryBus(),
+    ) { }
 
-    protected send(sessionId: string, eventName: string, eventData: any) {
+    public send(sessionId: string, eventName: string, eventData: any) {
         this.bus.send(sessionId, {
             comment: eventName === EventId.NeedWatch
                 ? EventId.NeedWatch

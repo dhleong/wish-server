@@ -1,4 +1,7 @@
+import { RedisClient } from "redis";
+
 import services from "../services";
+import * as redis from "./redis";
 
 export enum EventId {
     Changed = "changed",
@@ -13,30 +16,35 @@ export interface IChannelsService {
     sendNeedWatch(sheetId: string): void;
 }
 
-/**
- * CompositeChannelsService delegates to SSE and SIO services
- */
-export class CompositeChannelsService implements IChannelsService {
-    public sendChanged(sessionId: string, sheetId: string): void {
-        for (const serviceId of Object.keys(services.channelTypes)) {
-            const svc = (services.channelTypes as any)[
-                serviceId
-            ] as IChannelsService;
-            svc.sendChanged(sessionId, sheetId);
-        }
-    }
-
-    public sendNeedWatch(sessionId: any, sheetId?: any) {
-        for (const serviceId of Object.keys(services.channelTypes)) {
-            const svc = (services.channelTypes as any)[
-                serviceId
-            ] as IChannelsService;
-            svc.sendNeedWatch(sessionId, sheetId);
-        }
-    }
+export interface IChannelServiceImpl {
+    send(channelId: string, event: EventId, data: any): void;
 }
 
-export abstract class BaseChannelsService implements IChannelsService {
+const distributedEventChannel = "wish-event";
+
+/**
+ * DistributedChannelsService delegates to SSE and SIO services locally,
+ * and distributes events across server processes via Redis.
+ */
+export class DistributedChannelsService implements IChannelsService {
+
+    constructor(
+        private readonly pub: RedisClient = redis.getClient().redis,
+        sub: RedisClient = redis.getPubsub(),
+    ) {
+        // hacks for simpler test impl:
+        if (sub) {
+            sub.subscribe(distributedEventChannel);
+            sub.on("message", (channel, eventRaw) => {
+                if (channel !== distributedEventChannel) return;
+
+                const { channelId, event, data } = JSON.parse(eventRaw);
+
+                this.distributeLocal(channelId, event as EventId, data);
+            });
+        }
+    }
+
     public sendChanged(sessionId: string, sheetId: string): void {
         this.send(sessionId, EventId.Changed, {
             id: sheetId,
@@ -53,5 +61,22 @@ export abstract class BaseChannelsService implements IChannelsService {
         });
     }
 
-    protected abstract send(channelId: string, event: EventId, data: any): void;
+    /** NOTE: this is protected for easy implementation in test-integration */
+    protected send(channelId: string, event: EventId, data: any): void {
+        this.pub.publish(distributedEventChannel, JSON.stringify({
+            channelId,
+            data,
+            event,
+        }));
+    }
+
+    private distributeLocal(channelId: string, event: EventId, data: any): void {
+        for (const serviceId of Object.keys(services.channelTypes)) {
+            const svc = (services.channelTypes as any)[
+                serviceId
+            ] as IChannelServiceImpl;
+            svc.send(channelId, event, data);
+        }
+    }
+
 }

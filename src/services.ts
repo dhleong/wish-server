@@ -1,7 +1,6 @@
 import { IAuthService } from "./services/auth";
-import { IChannelsService } from "./services/channels";
+import { IChannelServiceImpl, IChannelsService } from "./services/channels";
 import { IProviderService } from "./services/provider";
-import { ISocketIoService } from "./services/sio";
 import { ISSEService } from "./services/sse";
 import { ITokenService } from "./services/token";
 
@@ -15,6 +14,6 @@ export default { channelTypes: {} } as any as {
     // not be accessed directly
     channelTypes: {
         sse: ISSEService,
-        sio: ISocketIoService,
+        sio: IChannelServiceImpl,
     },
 };

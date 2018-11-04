@@ -10,7 +10,7 @@ import { logger } from "./log";
 import { createRoutes } from "./routes";
 import services from "./services";
 import { AuthService } from "./services/auth";
-import { CompositeChannelsService } from "./services/channels";
+import { DistributedChannelsService } from "./services/channels";
 import { init as initProviders, ProviderService } from "./services/provider";
 import { init as initRedis } from "./services/redis";
 import { SocketIoService } from "./services/sio";
@@ -86,7 +86,7 @@ async function initServices() {
     await initToken();
 
     services.auth = new AuthService();
-    services.channels = new CompositeChannelsService();
+    services.channels = new DistributedChannelsService();
     services.provider = new ProviderService();
     services.token = new TokenService();
 

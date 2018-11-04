@@ -2,14 +2,18 @@ import { createHandyClient, IHandyRedis } from "handy-redis";
 
 import services from "../src/services";
 import { AuthService } from "../src/services/auth";
-import { BaseChannelsService, EventId } from "../src/services/channels";
+import { DistributedChannelsService, EventId } from "../src/services/channels";
 import { IProviderService } from "../src/services/provider";
 import { IProvider, IWatchParams } from "../src/services/provider/core";
 import * as redis from "../src/services/redis";
 import { ITokenPayload, ITokenService } from "../src/services/token";
 
-class FakeChannelsService extends BaseChannelsService {
+class FakeChannelsService extends DistributedChannelsService {
     public sent: {[channelId: string]: any[]} = {};
+
+    constructor() {
+        super(null as any, null as any); // HACKS!
+    }
 
     protected send(channel: string, event: EventId, data: any): void {
         if (!this.sent[channel]) {
