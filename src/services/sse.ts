@@ -3,36 +3,11 @@ import { IDarksideBus } from "darkside-sse";
 import { IEvent } from "lightside";
 
 import config from "../config";
+import { selectRandomIndex, slice } from "../util/collections";
 import { EventId, IChannelServiceImpl } from "./channels";
 
 export interface ISSEService extends IChannelServiceImpl {
     bus: IDarksideBus;
-}
-
-/**
- * Take a subset of the given set as an Array.
- * @return Array of length [count], or `set.size`,
- *  whichever is smaller.
- */
-function slice<T>(set: Set<T>, count: number): T[] {
-    // NOTE: some brief benchmarks suggested that
-    // Array.from is quite slow, so we always iterate,
-    // even if we're taking the whole array
-    const result: T[] = [];
-    const len = set.size;
-    const end = Math.min(len, count);
-
-    let i = 0;
-    for (const member of set) {
-        result.push(member);
-        if (++i >= end) break;
-    }
-
-    return result;
-}
-
-function selectRandom(choices: any[]): number {
-    return Math.floor(Math.random() * choices.length);
 }
 
 /**
@@ -44,7 +19,7 @@ export class SelectiveMemoryBus extends MemoryBus {
 
     constructor(
         private maxNeedWatch: number = config.maxNeedWatchPer,
-        private chooseMember: (slice: any[]) => number = selectRandom,
+        private chooseMember: (slice: any[]) => number = selectRandomIndex,
     ) {
         super();
     }
