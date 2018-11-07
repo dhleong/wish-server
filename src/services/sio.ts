@@ -1,9 +1,24 @@
 import { Server } from "http";
+import * as url from "url";
+
 import { default as SocketIO } from "socket.io";
 
 import { logger } from "../log";
 import { EventId, IChannelServiceImpl } from "./channels";
 import * as session from "./session";
+
+/**
+ * Convert a sane CORS_HOST value (eg: `http://dhleong.github.io`)
+ * to something that makes socket.io happy (eg: `http://dhleong.github.io:443`)
+ * NOTE: public for TESTING
+ */
+export function convertCorsHost(host: string | undefined) {
+    if (!host) return;
+    const { protocol, hostname, port: rawPort } = url.parse(host);
+    const port = rawPort ? rawPort :
+        (protocol === "https:" ? 443 : 80);
+    return `${protocol}//${hostname}:${port}`;
+}
 
 export class SocketIoService implements IChannelServiceImpl {
 
@@ -14,7 +29,7 @@ export class SocketIoService implements IChannelServiceImpl {
         this.io = SocketIO(server, {
             // TODO custom adapter to limit potential audience of need-watch
             // adapter: null,
-            origins: corsHost || "*:*",
+            origins: convertCorsHost(corsHost) || "*:*",
             path: "/v1/push/sessions/io",
             serveClient: false,
         });
