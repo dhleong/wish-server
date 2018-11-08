@@ -15,6 +15,8 @@ import * as session from "./session";
 // tslint:disable-next-line
 const BaseAdapter = require("socket.io-adapter");
 
+export const SOCKET_PATH = "/v1/push/sessions/io";
+
 /**
  * Convert a sane CORS_HOST value (eg: `http://dhleong.github.io`)
  * to something that makes socket.io happy (eg: `http://dhleong.github.io:443`)
@@ -122,7 +124,7 @@ export class SelectiveSIOAdapter extends EventEmitter implements IAdapter {
                 .filter(s => s);
 
             // See see.ts
-            const choices = allSockets.slice(20 * this.maxNeedWatch);
+            const choices = allSockets.slice(0, 20 * this.maxNeedWatch);
             for (let i = 0; i < this.maxNeedWatch; ++i) {
                 const r = this.chooseMember(choices);
                 const [ socket ] = choices.splice(r, 1);
@@ -139,12 +141,21 @@ export class SocketIoService implements IChannelServiceImpl {
     private io: SocketIO.Server;
     private ns: SocketIO.Namespace;
 
-    constructor(server: Server, corsHost: string | undefined) {
+    constructor(
+        server: Server | number,
+        corsHost: string | undefined,
+        adapterConstructor: new (nsp: SocketIO.Namespace) => IAdapter,
+
+        // dependency injection, sort of:
+        sessionConnect: typeof session.connect = session.connect,
+        sessionDestroy: typeof session.destroy = session.destroy,
+    ) {
+        const factory = adapterConstructor || SelectiveSIOAdapter;
         this.io = SocketIO(server as any, {
             // NOTE: the SocketIO typings suck, but this is what they want:
-            adapter: SelectiveSIOAdapter as any as IAdapter,
+            adapter: factory as any as IAdapter,
             origins: convertCorsHost(corsHost) || "*:*",
-            path: "/v1/push/sessions/io",
+            path: SOCKET_PATH,
             serveClient: false,
         });
 
@@ -156,13 +167,13 @@ export class SocketIoService implements IChannelServiceImpl {
                 const {
                     channels,
                     interestedIds,
-                } = await session.connect(sessionId);
+                } = await sessionConnect(sessionId);
 
                 conn.join(channels);
 
                 conn.on("disconnect", async () => {
                     try {
-                        await session.destroy(sessionId, interestedIds);
+                        await sessionDestroy(sessionId, interestedIds);
                     } catch (e) {
                         logger.warn(`Error destroying session ${sessionId}`, {error: e});
                     }
@@ -173,6 +184,13 @@ export class SocketIoService implements IChannelServiceImpl {
                 next(e);
             }
         });
+    }
+
+    /**
+     * Shutdown this service
+     */
+    public close() {
+        this.io.close();
     }
 
     public send(channelId: string, event: EventId, data: any) {
