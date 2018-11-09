@@ -3,12 +3,9 @@ import * as chai from "chai";
 import { EventId } from "../../src/services/channels";
 import * as watch from "../../src/services/watch";
 import { integrate } from "../test-integration";
+import { sleep } from "../test-utils";
 
 chai.should();
-
-const sleep = (durationMillis: number) => new Promise(resolve => {
-    setTimeout(resolve, durationMillis);
-});
 
 describe("Redis Service", () => {
     it("dispatches needWatch when on expire", integrate(async ({ channels }) => {
