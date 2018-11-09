@@ -144,7 +144,7 @@ export class SocketIoService implements IChannelServiceImpl {
     constructor(
         server: Server | number,
         corsHost: string | undefined,
-        adapterConstructor: new (nsp: SocketIO.Namespace) => IAdapter,
+        adapterConstructor: new (nsp: SocketIO.Namespace) => IAdapter = SelectiveSIOAdapter,
 
         // dependency injection, sort of:
         sessionConnect: typeof session.connect = session.connect,
