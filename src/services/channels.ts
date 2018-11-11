@@ -5,11 +5,14 @@ import * as redis from "./redis";
 
 export enum EventId {
     Changed = "changed",
+    DM = "dm",
     NeedWatch = "need-watch",
 }
 
 export interface IChannelsService {
     sendChanged(sessionId: string, sheetId: string): void;
+
+    sendDmEvent(dmId: string, event: any): void;
 
     // tslint:disable-next-line:unified-signatures since the param moves
     sendNeedWatch(sessionId: string, sheetId?: string): void;
@@ -49,6 +52,10 @@ export class DistributedChannelsService implements IChannelsService {
         this.send(sessionId, EventId.Changed, {
             id: sheetId,
         });
+    }
+
+    public sendDmEvent(dmId: string, event: any): void {
+        this.send(dmId, EventId.DM, event);
     }
 
     public sendNeedWatch(sheetId: string): void;
