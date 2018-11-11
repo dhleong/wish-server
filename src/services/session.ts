@@ -35,6 +35,7 @@ export async function connect(
 export async function create(
     rawAuth: any,
     interestedIds: string[],
+    dmId?: string,
 ) {
     if (!interestedIds.length) {
         throw new InputError(`interestedIds must not be empty`);
@@ -45,6 +46,17 @@ export async function create(
 
     // create session and listen to it
     const sessionId = uuid();
+
+    if (dmId) {
+        // if we are claiming to be a dm, verify we can edit
+        // the file; we could restrict to the owner, but this
+        // allows co-DM situations where the original owner
+        // shares it and grants edit permission to the co-DM(s)
+        await services.auth.verifyCanEdit(auth, dmId);
+
+        // looks good; save it
+        await setSessionDmOf(sessionId, dmId);
+    }
 
     // attempt to watch any files that need it;
     // the `watch` service will ignore dups
@@ -76,4 +88,15 @@ async function prepareSession(
     interestedIds: string[],
 ) {
     return redis.getClient().setex(sessionId, 5 * 60, JSON.stringify(interestedIds));
+}
+
+async function setSessionDmOf(
+    sessionId: string,
+    dmId: string,
+) {
+    return redis.getClient().setex(
+        `dm:${sessionId}`,
+        5 * 3600,
+        dmId,
+    );
 }

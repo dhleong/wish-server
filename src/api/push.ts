@@ -1,6 +1,6 @@
 import * as Koa from "koa";
 
-import { requireKey } from "../errors";
+import { AuthError, requireKey } from "../errors";
 import { logger } from "../log";
 import * as push from "../services/push";
 
@@ -10,6 +10,18 @@ export async function send(ctx: Koa.Context) {
     }
 
     logger.warn("No resource state provided with push attempt", {headers: ctx.headers});
+}
+
+export async function dm(ctx: Koa.Context) {
+    const sessionId = ctx.headers.Authorization;
+    if (!sessionId) {
+        throw new AuthError();
+    }
+
+    const event = requireKey(ctx.request, "body");
+
+    await push.sendDmEvent(sessionId, event);
+    ctx.status = 201;
 }
 
 async function sendGapi(ctx: Koa.Context) {

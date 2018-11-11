@@ -100,4 +100,28 @@ describe("session service", () => {
         // ... no new messages should have be sent
         channels.sent.should.be.empty;
     }));
+
+    it("handles DM session requests", integrate(async ({ provider, redis }) => {
+        const ids = ["1", "2"];
+        const dmId = "gdrive/wdmid";
+
+        provider.inst.editableFiles.add("dmid");
+        const sessionId = await session.create({}, ids, dmId);
+
+        // if the session was created, we should also have set
+        // what sheet we're the DM of
+        const setDmId = redis.get(`dm:${sessionId}`);
+        await setDmId.should.eventually.equal(dmId);
+    }));
+
+    it("verifies DM session requests", integrate(async ({ provider, redis }) => {
+        const ids = ["1", "2"];
+        const dmId = "gdrive/wdmid";
+
+        // NOTE: above we add the fileId to editableFiles on the Fake.
+        // By skipping that, we simulate an auth error from that service
+
+        await session.create({}, ids, dmId)
+            .should.eventually.be.rejected;
+    }));
 });

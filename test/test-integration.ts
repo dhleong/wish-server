@@ -1,5 +1,6 @@
 import { createHandyClient, IHandyRedis } from "handy-redis";
 
+import { InputError } from "../src/errors";
 import services from "../src/services";
 import { AuthService } from "../src/services/auth";
 import { DistributedChannelsService, EventId } from "../src/services/channels";
@@ -39,6 +40,7 @@ class FakeTokenService implements ITokenService {
 export class FakeProvider implements IProvider<any> {
 
     public validateRequests: any[] = [];
+    public editableFiles = new Set<string>();
 
     public async watch(config: IWatchParams<any>, channelId: string, ttlSeconds: number): Promise<any> {
         // nop
@@ -49,13 +51,18 @@ export class FakeProvider implements IProvider<any> {
     public async validate(auth: any): Promise<any> {
         this.validateRequests.push(auth);
     }
+    public async verifyCanEdit(auth: any, fileId: string): Promise<any> {
+        if (!this.editableFiles.has(fileId)) {
+            throw new InputError(`Not authorized: ${fileId}`);
+        }
+    }
 }
 
 class FakeProviderService implements IProviderService {
 
     public readonly knownProviders: string[] = ["fake"];
 
-    private readonly inst = new FakeProvider();
+    public readonly inst = new FakeProvider();
 
     public byId(providerId: string): IProvider<any> {
         return this.inst;

@@ -26,4 +26,6 @@ export interface IProvider<Auth> {
     ): Promise<any>;
 
     validate(auth: Auth): Promise<any> | never;
+
+    verifyCanEdit(auth: Auth, fileId: string): Promise<any>;
 }

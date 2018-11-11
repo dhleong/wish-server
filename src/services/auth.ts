@@ -1,12 +1,16 @@
 import { InputError } from "../errors";
 import services from "../services";
+import { unpackSheetId } from "../util/sheet";
+import { IGdriveOauth } from "./provider/gdrive";
 
 export interface IAuth {
-    gdrive?: any;
+    gdrive?: IGdriveOauth;
 }
 
 export interface IAuthService {
     validate(auth: any): Promise<IAuth> | never;
+
+    verifyCanEdit(auth: IAuth, dmId: string): Promise<void>;
 }
 
 export class AuthService implements IAuthService {
@@ -27,5 +31,15 @@ export class AuthService implements IAuthService {
         }
 
         return auth as IAuth;
+    }
+
+    public async verifyCanEdit(auth: IAuth, fileId: string) {
+        const { id, provider: providerId } = unpackSheetId(fileId);
+        const provider = services.provider.byId(providerId);
+        if (!provider) {
+            throw new InputError(`File id ${fileId} has invalid provider`);
+        }
+
+        return provider.verifyCanEdit((auth as any)[providerId], id);
     }
 }
