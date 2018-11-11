@@ -11,6 +11,7 @@ export function createRoutes() {
     const routes = new Router();
 
     routes.post("/push/send", push.send);
+    routes.post("/push/sessions/dm", push.dm);
 
     routes.post("/push/sessions", session.create);
     routes.get("/push/sessions/sse/:sessionId",

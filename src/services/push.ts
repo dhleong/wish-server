@@ -1,5 +1,5 @@
 
-import { InputError, requireInput } from "../errors";
+import { AuthError, requireInput } from "../errors";
 import services from "../services";
 import * as redis from "../services/redis";
 
@@ -35,7 +35,7 @@ export async function sendDmEvent(sessionId: string, event: any) {
     const dmId = await redis.getClient().get(`dm:${sessionId}`);
     if (!dmId) {
         // no such DM session
-        throw new InputError("No such DM session");
+        throw new AuthError("No such DM session");
     }
 
     services.channels.sendDmEvent(dmId, event);
