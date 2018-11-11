@@ -53,6 +53,7 @@ export async function create(ctx: Koa.Context): Promise<void> {
     const params = ctx.request.body as {
         auth: IAuth,
         ids: string[],
+        dm?: string,
     };
     requireKey(params, "auth");
     requireKey(params, "ids");
@@ -60,6 +61,7 @@ export async function create(ctx: Koa.Context): Promise<void> {
     const sessionId = await session.create(
         params.auth,
         params.ids,
+        params.dm,
     );
 
     // return the session ID so they can subscribe later
