@@ -5,7 +5,7 @@
 import { OAuth2Client } from "google-auth-library";
 import { drive_v3, google } from "googleapis";
 
-import { requireKey } from "../../errors";
+import { InputError, requireKey } from "../../errors";
 import * as redis from "../redis";
 import { IProvider, IWatchParams } from "./core";
 
@@ -96,5 +96,21 @@ export class GdriveProvider implements IProvider<IGdriveOauth> {
             audience: this.oauthClientId,
             idToken,
         });
+    }
+
+    public async verifyCanEdit(auth: IGdriveOauth, fileId: string) {
+        requireKey(auth, "id_token");
+        requireKey(auth, "access_token");
+
+        const file = await this.api.files.get({
+            auth: oauth(auth),
+            fileId,
+
+            fields: "capabilities(canEdit)",
+        });
+
+        if (!file.data || !file.data.capabilities || !file.data.capabilities.canEdit) {
+            throw new InputError("Not authorized");
+        }
     }
 }
